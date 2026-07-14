@@ -4,10 +4,14 @@ use std::{collections::{HashMap, HashSet}, env::args};
 use crate::{environment::scope::Scope, parser::ast::{Program, expr::{ ExprNode, SilkAssignment, SilkOperator}, stmt::StmtNode}};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
+use colored_text::Colorize;
 
 use super::value::SilkValue;
 
 type SilkType = usize;
+
+const SILK_EXIT_OK: i32 = 0;
+const SILK_EXIT_ERRPR: i32 = 1;
 
 pub enum SilkHandle {
     HeapAllocated(usize),
@@ -138,7 +142,7 @@ impl VirtualMachine {
         return Some(ls.clone());
     }
 
-    pub fn execute(&mut self, program: Program, import_mode: bool) {
+    pub fn execute(&mut self, program: Program, import_mode: bool) -> i32 {
         if !import_mode {
             self.scope = self.scope.child();
         }
@@ -146,8 +150,8 @@ impl VirtualMachine {
         for stmt in program.statements {
             let err_code = self.evaluate_statement(&stmt);
             if let Some(error_msg) = err_code {
-                println!("An error occured! {}", error_msg);
-                return;
+                println!("{}: {}", "[Silk Runtime Error]".red(), error_msg.yellow());
+                return 1;
             }
         }
         
@@ -159,6 +163,8 @@ impl VirtualMachine {
             self.scope = self.scope.pop();
             self.clear_garbage();
         }
+
+        0
     }
 
     pub fn clear_garbage(&mut self) {
@@ -255,7 +261,10 @@ impl VirtualMachine {
                             let program = parser.parse();
 
                             
-                            self.execute(program, true);
+                            let exit_code = self.execute(program, true);
+                            if exit_code != SILK_EXIT_OK {
+                                return Some(format!("Error occurred while importing silk file '{}'", module_name));
+                            }
                             Option::None
                         }
                         Err(e) => Some(format!("Could not read silk file '{}': {}", module_name, e))
