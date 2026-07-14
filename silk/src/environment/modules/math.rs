@@ -196,23 +196,23 @@ pub fn build_math_map() -> HashMap<String, SilkValue> {
     let mut map = HashMap::new();
     
     
-    map.insert("abs".to_string(), SilkValue::NativeFn(silk_math_abs));
-    map.insert("sqrt".to_string(), SilkValue::NativeFn(silk_math_sqrt));
-    map.insert("pow".to_string(), SilkValue::NativeFn(silk_math_pow));
+    map.insert("abs".to_string(), SilkValue::NativeFn(silk_math_abs, String::from("Abs(num: Number) -> Number; Returns the absolute value of a number")));
+    map.insert("sqrt".to_string(), SilkValue::NativeFn(silk_math_sqrt, String::from("Sqrt(num: Number) -> Number; Returns the square root of a number")));
+    map.insert("pow".to_string(), SilkValue::NativeFn(silk_math_pow, String::from("Pow(base: Number, exponent: Number) -> Number; Returns the base raised to the power of the exponent")));
     
     
-    map.insert("floor".to_string(), SilkValue::NativeFn(silk_math_floor));
-    map.insert("ceil".to_string(), SilkValue::NativeFn(silk_math_ceil));
-    map.insert("round".to_string(), SilkValue::NativeFn(silk_math_round));
+    map.insert("floor".to_string(), SilkValue::NativeFn(silk_math_floor, String::from("Floor(num: Number) -> Number; Returns the largest integer less than or equal to a number")));
+    map.insert("ceil".to_string(), SilkValue::NativeFn(silk_math_ceil, String::from("Ceil(num: Number) -> Number; Returns the smallest integer greater than or equal to a number")));
+    map.insert("round".to_string(), SilkValue::NativeFn(silk_math_round, String::from("Round(num: Number) -> Number; Returns the nearest integer to a number")));
     
     
-    map.insert("min".to_string(), SilkValue::NativeFn(silk_math_min));
-    map.insert("max".to_string(), SilkValue::NativeFn(silk_math_max));
+    map.insert("min".to_string(), SilkValue::NativeFn(silk_math_min, String::from("Min(num1: Number, num2: Number) -> Number; Returns the smaller of two numbers")));
+    map.insert("max".to_string(), SilkValue::NativeFn(silk_math_max, String::from("Max(num1: Number, num2: Number) -> Number; Returns the larger of two numbers")));
     
     
-    map.insert("sin".to_string(), SilkValue::NativeFn(silk_math_sin));
-    map.insert("cos".to_string(), SilkValue::NativeFn(silk_math_cos));
-    map.insert("tan".to_string(), SilkValue::NativeFn(silk_math_tan));
+    map.insert("sin".to_string(), SilkValue::NativeFn(silk_math_sin, String::from("Sin(num: Number) -> Number; Returns the sine of a number")));
+    map.insert("cos".to_string(), SilkValue::NativeFn(silk_math_cos, String::from("Cos(num: Number) -> Number; Returns the cosine of a number")));
+    map.insert("tan".to_string(), SilkValue::NativeFn(silk_math_tan, String::from("Tan(num: Number) -> Number; Returns the tangent of a number")));
     
     
     map.insert("PI".to_string(), SilkValue::Float(std::f64::consts::PI as f32));

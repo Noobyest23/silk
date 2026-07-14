@@ -785,7 +785,7 @@ impl VirtualMachine {
 
                 Ok(return_val)
             }
-            SilkValue::NativeFn(native) => {
+            SilkValue::NativeFn(native, _) => {
                 Ok(native(self, &v_args))
             }
             SilkValue::ObjectDefinition(def) => {

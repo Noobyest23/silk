@@ -155,12 +155,12 @@ pub fn silk_io_delete(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
 
 pub fn build_io_map() -> HashMap<String, SilkValue> {
     let mut map = HashMap::new();
-    map.insert("print".to_string(), SilkValue::NativeFn(silk_io_print));
-    map.insert("read".to_string(), SilkValue::NativeFn(silk_io_read));
-    map.insert("write".to_string(), SilkValue::NativeFn(silk_io_write));
-    map.insert("append".to_string(), SilkValue::NativeFn(silk_io_append));
-    map.insert("input".to_string(), SilkValue::NativeFn(silk_io_input));
-    map.insert("exists".to_string(), SilkValue::NativeFn(silk_io_exists));
-    map.insert("delete".to_string(), SilkValue::NativeFn(silk_io_delete));
+    map.insert("print".to_string(), SilkValue::NativeFn(silk_io_print, String::from("Print(any, any1, any2...) -> Null; Prints values to the console")));
+    map.insert("read".to_string(), SilkValue::NativeFn(silk_io_read, String::from("Read(path: String) -> String; Reads a text file into a string")));
+    map.insert("write".to_string(), SilkValue::NativeFn(silk_io_write, String::from("Write(path: String, content: String) -> Null; Writes a string into a text file")));
+    map.insert("append".to_string(), SilkValue::NativeFn(silk_io_append, String::from("Append(path: String, content: String) -> Null; Appends a string to a file")));
+    map.insert("input".to_string(), SilkValue::NativeFn(silk_io_input, String::from("Input() -> String; Reads a line from the console")));
+    map.insert("exists".to_string(), SilkValue::NativeFn(silk_io_exists, String::from("Exists(path: String) -> Boolean; Checks if a file exists")));
+    map.insert("delete".to_string(), SilkValue::NativeFn(silk_io_delete, String::from("Delete(path: String) -> Null; Deletes a file")));
     map
 }

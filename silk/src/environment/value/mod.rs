@@ -16,7 +16,7 @@ pub enum SilkValue {
     Object(HashMap<String, SilkValue>),
     List(Vec<SilkValue>),
     Function(Vec<String>, Vec<StmtNode>),
-    NativeFn(NativeFn),
+    NativeFn(NativeFn, String),
     Pointer(usize),
     ObjectDefinition(Vec<StmtNode>),
 }
@@ -53,8 +53,8 @@ impl fmt::Display for SilkValue {
                 }
                 write!(f, "\n}}")
             },
-            SilkValue::NativeFn(_) => {
-                write!(f, "(Cannot Print Native functions)")
+            SilkValue::NativeFn(_, desc) => {
+                write!(f, "(Native Function: {})", desc)
             },
             SilkValue::Pointer(ptr) => {
                 write!(f, "ptr({})", ptr)
@@ -80,7 +80,7 @@ impl SilkValue {
             SilkValue::String(s) => !s.is_empty(),
             SilkValue::List(l) => !l.is_empty(),
             SilkValue::Function(_, _) => true,
-            SilkValue::NativeFn(_) => true,
+            SilkValue::NativeFn(_, _) => true,
             SilkValue::Object(_) => true,
             SilkValue::Pointer(ptr) => *ptr == 0 as usize,
             SilkValue::ObjectDefinition(_) => false,

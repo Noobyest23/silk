@@ -238,15 +238,15 @@ pub fn silk_list_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
 
 pub fn build_list_map() -> HashMap<String, SilkValue> {
     let mut map = HashMap::new();
-    map.insert("len".to_string(), SilkValue::NativeFn(silk_list_len));
-    map.insert("contains".to_string(), SilkValue::NativeFn(silk_list_contains));
-    map.insert("index_of".to_string(), SilkValue::NativeFn(silk_list_index_of));
-    map.insert("slice".to_string(), SilkValue::NativeFn(silk_list_slice));
-    map.insert("push".to_string(), SilkValue::NativeFn(silk_list_push));
-    map.insert("pop".to_string(), SilkValue::NativeFn(silk_list_pop));
-    map.insert("first".to_string(), SilkValue::NativeFn(silk_list_first));
-    map.insert("last".to_string(), SilkValue::NativeFn(silk_list_last));
-    map.insert("reverse".to_string(), SilkValue::NativeFn(silk_list_reverse));
-    map.insert("count".to_string(), SilkValue::NativeFn(silk_list_count));
+    map.insert("len".to_string(), SilkValue::NativeFn(silk_list_len, String::from("Len(list: List) -> Int; Returns the length of a list")));
+    map.insert("contains".to_string(), SilkValue::NativeFn(silk_list_contains, String::from("Contains(list: List, item: Any) -> Boolean; Checks if a list contains an item")));
+    map.insert("index_of".to_string(), SilkValue::NativeFn(silk_list_index_of, String::from("IndexOf(list: List, item: Any) -> Int; Returns the index of an item in a list")));
+    map.insert("slice".to_string(), SilkValue::NativeFn(silk_list_slice, String::from("Slice(list: List, start: Int, end: Int) -> List; Returns a slice of a list")));
+    map.insert("push".to_string(), SilkValue::NativeFn(silk_list_push, String::from("Push(list: List, item: Any) -> Null; Adds an item to the end of a list")));
+    map.insert("pop".to_string(), SilkValue::NativeFn(silk_list_pop, String::from("Pop(list: List) -> Any; Removes and returns the last item from a list")));
+    map.insert("first".to_string(), SilkValue::NativeFn(silk_list_first, String::from("First(list: List) -> Any; Returns the first item from a list")));
+    map.insert("last".to_string(), SilkValue::NativeFn(silk_list_last, String::from("Last(list: List) -> Any; Returns the last item from a list")));
+    map.insert("reverse".to_string(), SilkValue::NativeFn(silk_list_reverse, String::from("Reverse(list: List) -> Null; Reverses a list")));
+    map.insert("count".to_string(), SilkValue::NativeFn(silk_list_count, String::from("Count(list: List, item: Any) -> Int; Counts the occurrences of an item in a list")));
     map
 }

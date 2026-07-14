@@ -315,22 +315,22 @@ pub fn silk_string_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
 pub fn build_string_map() -> HashMap<String, SilkValue> {
     let mut map = HashMap::new();
     
-    map.insert("len".to_string(), SilkValue::NativeFn(silk_string_len));
-    map.insert("concat".to_string(), SilkValue::NativeFn(silk_string_concat));
-    map.insert("upper".to_string(), SilkValue::NativeFn(silk_string_upper));
-    map.insert("lower".to_string(), SilkValue::NativeFn(silk_string_lower));
-    map.insert("substring".to_string(), SilkValue::NativeFn(silk_string_substring));
-    map.insert("trim".to_string(), SilkValue::NativeFn(silk_string_trim));
-    map.insert("contains".to_string(), SilkValue::NativeFn(silk_string_contains));
-    map.insert("replace".to_string(), SilkValue::NativeFn(silk_string_replace));
+    map.insert("len".to_string(), SilkValue::NativeFn(silk_string_len, String::from("Len(s: String) -> Int; Returns the length of a string")));
+    map.insert("concat".to_string(), SilkValue::NativeFn(silk_string_concat, String::from("Concat(s1: String, s2: String) -> String; Concatenates two strings")));
+    map.insert("upper".to_string(), SilkValue::NativeFn(silk_string_upper, String::from("Upper(s: String) -> String; Converts a string to uppercase")));
+    map.insert("lower".to_string(), SilkValue::NativeFn(silk_string_lower, String::from("Lower(s: String) -> String; Converts a string to lowercase")));
+    map.insert("substring".to_string(), SilkValue::NativeFn(silk_string_substring, String::from("Substring(s: String, start: Int, end: Int) -> String; Returns a substring of a string")));
+    map.insert("trim".to_string(), SilkValue::NativeFn(silk_string_trim, String::from("Trim(s: String) -> String; Removes whitespace from the beginning and end of a string")));
+    map.insert("contains".to_string(), SilkValue::NativeFn(silk_string_contains, String::from("Contains(s: String, needle: String) -> Boolean; Checks if a string contains a substring")));
+    map.insert("replace".to_string(), SilkValue::NativeFn(silk_string_replace, String::from("Replace(s: String, old: String, new: String) -> String; Replaces occurrences of a substring with another substring")));
     
     
-    map.insert("reverse".to_string(), SilkValue::NativeFn(silk_string_reverse));
-    map.insert("starts_with".to_string(), SilkValue::NativeFn(silk_string_starts_with));
-    map.insert("ends_with".to_string(), SilkValue::NativeFn(silk_string_ends_with));
-    map.insert("index_of".to_string(), SilkValue::NativeFn(silk_string_index_of));
-    map.insert("repeat".to_string(), SilkValue::NativeFn(silk_string_repeat));
-    map.insert("char_at".to_string(), SilkValue::NativeFn(silk_string_char_at));
-    map.insert("count".to_string(), SilkValue::NativeFn(silk_string_count));
+    map.insert("reverse".to_string(), SilkValue::NativeFn(silk_string_reverse, String::from("Reverse(s: String) -> String; Returns a reversed version of a string")));
+    map.insert("starts_with".to_string(), SilkValue::NativeFn(silk_string_starts_with, String::from("StartsWith(s: String, prefix: String) -> Boolean; Checks if a string starts with a prefix")));
+    map.insert("ends_with".to_string(), SilkValue::NativeFn(silk_string_ends_with, String::from("EndsWith(s: String, suffix: String) -> Boolean; Checks if a string ends with a suffix")));
+    map.insert("index_of".to_string(), SilkValue::NativeFn(silk_string_index_of, String::from("IndexOf(s: String, needle: String) -> Int; Returns the index of the first occurrence of a substring in a string")));
+    map.insert("repeat".to_string(), SilkValue::NativeFn(silk_string_repeat, String::from("Repeat(s: String, n: Int) -> String; Returns a string repeated n times")));
+    map.insert("char_at".to_string(), SilkValue::NativeFn(silk_string_char_at, String::from("CharAt(s: String, index: Int) -> String; Returns the character at a specific index in a string")));
+    map.insert("count".to_string(), SilkValue::NativeFn(silk_string_count, String::from("Count(s: String, needle: String) -> Int; Counts the occurrences of a substring in a string")));
     map
 }
