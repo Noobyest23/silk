@@ -5,4 +5,8 @@ struct Foo {
 }
 
 print(Foo())
-print(bar)
+#print(bar)
+
+var my_foo = Foo()
+my_foo.bar = 2
+print(my_foo.bar)

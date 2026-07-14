@@ -18,6 +18,7 @@ pub enum SilkHandle {
     StackAllocated(usize),
     HeapElement(usize, usize),
     GlobalValue(String),
+    ObjectField(Box<SilkHandle>, String),
 }
 
 pub struct VirtualMachine {
@@ -140,6 +141,76 @@ impl VirtualMachine {
         };
 
         return Some(ls.clone());
+    }
+
+    fn get_value_from_handle(&self, handle: &SilkHandle) -> Result<SilkValue, String> {
+        match handle {
+            SilkHandle::StackAllocated(idx) => Ok(self.stack[*idx].clone()),
+            SilkHandle::HeapAllocated(ptr) => self.heap.get(ptr).cloned().ok_or("Invalid heap pointer reference".to_string()),
+            SilkHandle::HeapElement(ptr, idx) => {
+                if let Some(SilkValue::List(arr)) = self.heap.get(ptr) {
+                    Ok(arr[*idx].clone())
+                } else {
+                    Err("Target element context is not inside an indexable list".to_string())
+                }
+            }
+            SilkHandle::GlobalValue(id) => self.globals.get(id).cloned().ok_or("Invalid Global ID".to_string()),
+            SilkHandle::ObjectField(parent, field) => {
+                let parent_value = self.get_value_from_handle(parent)?;
+                match parent_value {
+                    SilkValue::Object(map) => map.get(field).cloned().ok_or_else(|| format!("Field '{}' not found on object", field)),
+                    SilkValue::Pointer(ptr) => match self.heap.get(&ptr) {
+                        Some(SilkValue::Object(map)) => map.get(field).cloned().ok_or_else(|| format!("Field '{}' not found on object", field)),
+                        _ => Err("Cannot access field on a non-object value".to_string()),
+                    },
+                    _ => Err("Cannot access field on a non-object value".to_string()),
+                }
+            }
+        }
+    }
+
+    fn set_value_in_handle(&mut self, handle: &SilkHandle, value: SilkValue) -> Result<(), String> {
+        match handle {
+            SilkHandle::StackAllocated(idx) => {
+                self.stack[*idx] = value;
+                Ok(())
+            }
+            SilkHandle::HeapAllocated(ptr) => {
+                self.heap.insert(*ptr, value);
+                Ok(())
+            }
+            SilkHandle::HeapElement(ptr, idx) => {
+                if let Some(SilkValue::List(arr)) = self.heap.get_mut(ptr) {
+                    arr[*idx] = value;
+                    Ok(())
+                } else {
+                    Err("Target element context is not inside an indexable list".to_string())
+                }
+            }
+            SilkHandle::GlobalValue(id) => {
+                self.globals.insert(id.clone(), value);
+                Ok(())
+            }
+            SilkHandle::ObjectField(parent, field) => {
+                let parent_value = self.get_value_from_handle(parent)?;
+                let new_parent_value = match parent_value {
+                    SilkValue::Object(mut map) => {
+                        map.insert(field.clone(), value);
+                        SilkValue::Object(map)
+                    }
+                    SilkValue::Pointer(ptr) => {
+                        let Some(SilkValue::Object(mut map)) = self.heap.get(&ptr).cloned() else {
+                            return Err("Cannot assign to a field on a non-object value".to_string());
+                        };
+                        map.insert(field.clone(), value);
+                        self.heap.insert(ptr, SilkValue::Object(map));
+                        return Ok(());
+                    }
+                    _ => return Err("Cannot assign to a field on a non-object value".to_string()),
+                };
+                self.set_value_in_handle(parent, new_parent_value)
+            }
+        }
     }
 
     pub fn execute(&mut self, program: Program, import_mode: bool) -> i32 {
@@ -621,18 +692,7 @@ impl VirtualMachine {
         let r_value = self.evaluate_expression(rhs)?;
 
         
-        let current_lhs_value = match &l_handle {
-            SilkHandle::StackAllocated(idx) => self.stack[*idx].clone(),
-            SilkHandle::HeapAllocated(ptr) => self.heap.get(ptr).cloned().ok_or("Invalid heap pointer reference")?,
-            SilkHandle::HeapElement(ptr, idx) => {
-                if let Some(SilkValue::List(arr)) = self.heap.get(ptr) {
-                    arr[*idx].clone()
-                } else {
-                    return Err("Target element context is not inside an indexable list".to_string());
-                }
-            }
-            SilkHandle::GlobalValue(id) => self.globals.get(id).cloned().ok_or("Invalid Global ID")?,
-        };
+        let current_lhs_value = self.get_value_from_handle(&l_handle)?;
 
         
         let final_value = match op {
@@ -673,24 +733,8 @@ impl VirtualMachine {
         };
 
         
-        match l_handle {
-            SilkHandle::StackAllocated(idx) => {
-                self.stack[idx] = final_value.clone();
-            }
-            SilkHandle::HeapAllocated(ptr) => {
-                self.heap.insert(ptr, final_value.clone());
-            }
-            SilkHandle::HeapElement(ptr, idx) => {
-                if let Some(SilkValue::List(arr)) = self.heap.get_mut(&ptr) {
-                    arr[idx] = final_value.clone();
-                }
-            }
-            SilkHandle::GlobalValue(id) => {
-                self.globals.insert(id, final_value.clone());
-            }
-        }
+        self.set_value_in_handle(&l_handle, final_value.clone())?;
 
-        
         Ok(final_value)
     }
 
@@ -762,24 +806,37 @@ impl VirtualMachine {
                 }
                 
                 self.scope = self.scope.pop();
-                return Ok(SilkValue::Object(struct_map));
+                let handle = self.heap_allocate(SilkValue::Object(struct_map.clone()));
+                if let SilkHandle::HeapAllocated(ptr) = handle {
+                    return Ok(SilkValue::Pointer(ptr));
+                }
+                else {
+                    unreachable!();
+                }
+
+    
             }
             _ => Err(format!("Cannot call on a non-function value! ({})", ptr_val))
         }
     }
 
     pub fn expr_dot(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkValue, String> {
-        
         let o_object = self.evaluate_expression(object)?;
-        let SilkValue::Pointer(ptr) = o_object else {
-            return Err(String::from("Only heap allocated values can have accessables"));
+
+        let (ptr, v_object) = match o_object {
+            SilkValue::Pointer(ptr) => {
+                self.o_ptr = ptr;
+                let v_object = self.heap.get(&ptr).cloned().ok_or_else(|| "Object reference was not found in the heap".to_string())?;
+                (Some(ptr), v_object)
+            }
+            value => {
+                self.o_ptr = 0;
+                (None, value)
+            }
         };
-        
-        
-        let v_object = self.heap.get(&ptr).unwrap();
-        self.o_ptr = ptr;
+
         match v_object {
-            SilkValue::String(str) => {
+            SilkValue::String(_) => {
                 let string_lib = self.modules.get("string").unwrap().clone();
                 self.scope = self.scope.child();
                 for (id, v) in string_lib {
@@ -791,7 +848,7 @@ impl VirtualMachine {
                 }
 
                 let result = self.evaluate_expression(&accessee);
-                
+
                 let variables_created = self.scope.variables.len();
                 for _ in 0..variables_created {
                     self.stack_pop();
@@ -811,13 +868,21 @@ impl VirtualMachine {
                 }
 
                 let result = self.evaluate_expression(&accessee);
-                
+
                 let variables_created = self.scope.variables.len();
                 for _ in 0..variables_created {
                     self.stack_pop();
                 }
                 self.scope = self.scope.pop();
                 result
+            },
+            SilkValue::Object(map) => {
+                let field_name = match accessee.as_ref() {
+                    ExprNode::Var(id) => id,
+                    _ => return Err("Struct field access requires a field name".to_string()),
+                };
+
+                map.get(field_name).cloned().ok_or_else(|| format!("Field '{}' not found on object", field_name))
             },
             _ => Err(format!("Dot access cannot be implemented for object type: {}", v_object))
         }
@@ -827,6 +892,7 @@ impl VirtualMachine {
         match expression {
             ExprNode::Var(id) => self.expr_var_as_mut(id),
             ExprNode::IndexAccess(container, idx) => self.expr_index_access_as_mut(container, idx),
+            ExprNode::DotAccess(object, accessee) => self.expr_dot_as_mut(object, accessee),
             _ => Err("Cannot evaluate an expression of this type as mutable".to_string())
         }
     }
@@ -870,4 +936,16 @@ impl VirtualMachine {
         }
     }
 
+    pub fn expr_dot_as_mut(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkHandle, String> {
+        let parent_handle = self.evaluate_expression_as_mut(object)?;
+
+        match accessee.as_ref() {
+            ExprNode::Var(field_name) => Ok(SilkHandle::ObjectField(Box::new(parent_handle), field_name.clone())),
+            _ => Err("Struct field access as mutable requires a field name".to_string()),
+        }
+    }
+
+    pub fn expr_dot_access_as_mut(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkHandle, String> {
+        self.expr_dot_as_mut(object, accessee)
+    }
 }
