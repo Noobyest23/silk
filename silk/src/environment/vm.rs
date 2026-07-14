@@ -1,6 +1,6 @@
 
 use core::panic;
-use std::{collections::{HashMap, HashSet}, env::args};
+use std::collections::{HashMap, HashSet};
 use crate::{environment::scope::Scope, parser::ast::{Program, expr::{ ExprNode, SilkAssignment, SilkOperator}, stmt::StmtNode}};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
@@ -228,7 +228,7 @@ impl VirtualMachine {
         
         if !import_mode {
             let variables_declared = self.scope.variables.len();
-            for i in 0..variables_declared {
+            for _i in 0..variables_declared {
                 self.stack_pop();
             }
             self.scope = self.scope.pop();
@@ -429,7 +429,7 @@ impl VirtualMachine {
     pub fn evaluate_expression_statement(&mut self, expression: ExprNode) -> Option<String> {
         let result = self.evaluate_expression(&expression);
         match result {
-            Ok(v) => Option::None,
+            Ok(_v) => Option::None,
             Err(e) => Some(e.clone())
         }
     }
@@ -438,14 +438,14 @@ impl VirtualMachine {
         match statement.as_ref() {
             StmtNode::VarDecl(name, init) => {
                 let does_exist = self.scope.retrieve(name);
-                if let Some(global) = does_exist {
+                if let Some(_global) = does_exist {
                     return Some(format!("identifier '{}' already exists in scope", name));
                 }
 
                 let result = self.evaluate_expression(init);
                 match result {
                     Ok(initial_val) => {
-                        let global_idx = self.globals.len();
+                        let _global_idx = self.globals.len();
                         self.globals.insert(name.clone(), initial_val);
 
                         Option::None
@@ -461,7 +461,7 @@ impl VirtualMachine {
                 let v = SilkValue::Function(args.clone(), body.clone());
                 let handle = self.heap_allocate(v);
                 if let SilkHandle::HeapAllocated(ptr) = handle {
-                    let global_idx = self.globals.len();
+                    let _global_idx = self.globals.len();
                     self.globals.insert(name.clone(), SilkValue::Pointer(ptr));
 
                     Option::None
@@ -772,7 +772,7 @@ impl VirtualMachine {
                     self.scope.variables.insert(param_name.clone(), self.stack.len() - 1); 
                 }
 
-                let mut return_val = SilkValue::Null;
+                let return_val = SilkValue::Null;
                 for stmt in body {
                     self.evaluate_statement(&stmt); 
                 }
@@ -801,7 +801,7 @@ impl VirtualMachine {
                     struct_map.insert(name.clone(), self.stack.get(*ptr).expect("stack underflow").clone());
                 }
 
-                for idx in 0..variables_declared {
+                for _idx in 0..variables_declared {
                     self.stack_pop();
                 }
                 
@@ -823,7 +823,7 @@ impl VirtualMachine {
     pub fn expr_dot(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkValue, String> {
         let o_object = self.evaluate_expression(object)?;
 
-        let (ptr, v_object) = match o_object {
+        let (_ptr, v_object) = match o_object {
             SilkValue::Pointer(ptr) => {
                 self.o_ptr = ptr;
                 let v_object = self.heap.get(&ptr).cloned().ok_or_else(|| "Object reference was not found in the heap".to_string())?;
@@ -904,7 +904,7 @@ impl VirtualMachine {
         }
         else {
             let is_global = &self.globals.get(id);
-            if let Some(v) = is_global {
+            if let Some(_v) = is_global {
                 return Ok(SilkHandle::GlobalValue(id.clone()));
             }
             Result::Err(format!("Variable '{}' was not found in the scope", id))

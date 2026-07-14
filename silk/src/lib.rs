@@ -1,10 +1,9 @@
 mod lexer;
 mod parser;
-use core::ffi::c_str;
-use std::ffi::{CStr, CString, c_float, c_int};
+use std::ffi::{CStr, c_float, c_int};
 use std::fs::{read_to_string};
 use std::os::raw::c_char;
-use std::path::{self, Path};
+use std::path::Path;
 use lexer::Lexer;
 
 mod environment;
@@ -120,7 +119,7 @@ pub unsafe extern "C" fn inspect(module: *const c_char) {
         return;
     };
 
-    let mut vm = match vm_mutex.lock() {
+    let vm = match vm_mutex.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(), 
     };

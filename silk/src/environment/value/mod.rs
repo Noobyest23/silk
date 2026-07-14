@@ -30,9 +30,9 @@ impl fmt::Display for SilkValue {
             SilkValue::Bool(b) => write!(f, "{}", if *b {"true"} else {"false"}),
             SilkValue::String(str) => write!(f, "{}", str),
             SilkValue::Object(obj) => {
-                write!(f, "{{");
+                write!(f, "{{")?;
                 for (key, value) in obj {
-                    write!(f, "{} : {}", key, value);
+                    write!(f, "{} : {}", key, value)?;
                 }
                 write!(f, "}}")
             }
