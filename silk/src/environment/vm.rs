@@ -11,7 +11,7 @@ use super::value::SilkValue;
 type SilkType = usize;
 
 const SILK_EXIT_OK: i32 = 0;
-const SILK_EXIT_ERRPR: i32 = 1;
+const SILK_EXIT_ERROR: i32 = 1;
 
 pub enum SilkHandle {
     HeapAllocated(usize),
