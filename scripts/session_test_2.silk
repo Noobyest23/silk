@@ -1,0 +1,3 @@
+print(script_global_uno)
+
+print_message("global function")

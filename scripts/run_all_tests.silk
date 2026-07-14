@@ -1,0 +1,11 @@
+import "scripts/test_all_io.silk"
+import "scripts/test_all_list.silk"
+import "scripts/test_all_math.silk"
+import "scripts/test_all_string.silk"
+
+# simulate pushing the global x from outside a script
+global var global_x = "test_file"
+import "scripts/session_test_1.silk"
+import "scripts/session_test_2.silk"
+
+import "scripts/test_struct.silk"

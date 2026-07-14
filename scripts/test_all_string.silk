@@ -1,0 +1,28 @@
+import "io"
+
+# Test basic string functions
+print("=== Basic String Functions ===")
+print("".len())
+var msg = "Hello World!"
+print(msg.upper())
+print(msg.lower())
+print("hello".concat(" world"))
+print("        trimmed".trim())
+print("gwyudhellouihdn".substring(5, 11))
+print(msg.contains("World"))
+print("hello".replace("l", "L"))
+
+# Test new string functions
+print("=== New String Functions ===")
+print("hello".reverse())
+print("hello".starts_with("he"))
+print("hello".starts_with("wo"))
+print("hello".ends_with("lo"))
+print("hello".ends_with("he"))
+print("hello".index_of("l"))
+print("hello".index_of("z"))
+print("ab".repeat(3))
+print("hello".char_at(1))
+print("hello".char_at(10))
+print("abracadabra".count("a"))
+print("hello".count("l"))

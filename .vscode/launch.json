@@ -1,0 +1,47 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug unit tests in library 'silk'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=silk"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'loom'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=loom",
+                    "--package=loom"
+                ]
+            },
+            "args": [
+                "run",
+                "scripts/test_all_string.silk",
+            ]
+        },
+        {
+            "name": "Debug unit tests in executable 'loom'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=loom",
+                    "--package=loom"
+                ]
+            }
+        }
+    ]
+}

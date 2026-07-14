@@ -1,0 +1,30 @@
+import "io"
+import "math"
+
+# Test basic math functions
+print("=== Basic Math Functions ===")
+print(abs(-4.5))
+print(abs(3))
+print(sqrt(16))
+print(sqrt(2))
+print(pow(2, 3))
+print(pow(5, 2))
+print(PI)
+print(E)
+
+# Test new math functions
+print("=== New Math Functions ===")
+print(floor(3.7))
+print(floor(3.2))
+print(ceil(3.2))
+print(ceil(3.7))
+print(round(3.2))
+print(round(3.7))
+print(round(3.5))
+print(min(5, 3))
+print(min(-2, -8))
+print(max(5, 3))
+print(max(-2, -8))
+print(sin(0))
+print(cos(0))
+print(tan(0))

@@ -1,0 +1,13 @@
+global import "io"
+print(global_x)
+
+global var script_global_uno = "Hello Silk!"
+
+global func print_message(msg) {
+    print(msg)
+}
+
+import "scripts/hello_world.silk"
+
+print_message(msg)
+print_message("import test")

@@ -1,0 +1,29 @@
+import "io"
+
+# Test basic list functions
+print("=== Basic List Functions ===")
+var list = ["hello", "world"]
+print(list.len())
+print(list.contains("hello"))
+print(list.contains("foo"))
+print(list.index_of("world"))
+print(list.index_of("bar"))
+var sliced = list.slice(0, 1)
+print(sliced.len())
+var with_item = list.push("!")  
+print(with_item.len())
+
+# Test new list functions
+print("=== New List Functions ===")
+var nums = [1, 2, 3, 4, 5]
+print(nums.len())
+var popped = nums.pop()
+print(popped.len())
+print(nums.first())
+print(nums.last())
+var reversed = nums.reverse()
+print(reversed.len())
+var with_dupes = ["a", "b", "a", "c", "a"]
+print(with_dupes.count("a"))
+print(with_dupes.count("b"))
+print(with_dupes.count("z"))

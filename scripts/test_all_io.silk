@@ -1,0 +1,18 @@
+import "io"
+
+# Test basic I/O functions
+print("=== Basic I/O Functions ===")
+print("Io print!")
+write("io_test_write.txt", "Test content line 1")
+print("reading from test file: ")
+print(read("io_test_write.txt"))
+
+# Test new I/O functions
+print("=== New I/O Functions ===")
+append("io_test_write.txt", "Test content line 2")
+print("File after append:")
+print(read("io_test_write.txt"))
+print("File exists: ", exists("io_test_write.txt"))
+print("Nonexistent file exists: ", exists("nonexistent.txt"))
+delete("io_test_write.txt")
+print("File exists after delete: ", exists("io_test_write.txt"))

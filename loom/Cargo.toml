@@ -1,0 +1,9 @@
+[package]
+name = "loom"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+silk = { path = "../silk" }
+clap = { version = "4.3", features = ["derive"] }
+rustyline = "14.0.0"

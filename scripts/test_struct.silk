@@ -1,0 +1,8 @@
+import "io"
+
+struct Foo {
+    var bar = 10
+}
+
+print(Foo())
+print(bar)
