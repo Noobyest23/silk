@@ -1,8 +1,9 @@
 use std::{collections::HashMap, str, usize};
+use crate::environment::vm::SilkHandle;
 
 #[derive(Clone)]
 pub struct Scope {
-    pub variables: HashMap<String, usize>,
+    pub variables: HashMap<String, SilkHandle>,
     parent: Option<Box<Scope>>
 }
 
@@ -15,15 +16,15 @@ impl Scope {
         }
     }
 
-    pub fn retrieve(&mut self, id: &str) -> Option<usize> {
-        let v = self.variables.get(id);
+    pub fn retrieve(&mut self, id: &str) -> Option<SilkHandle> {
+        let v = self.variables.get(id).cloned();
 
         if v.is_none() {
             if let Some(mut p) = self.parent.clone() {
                 return p.retrieve(id);
             }
         }
-        v.copied()
+        v
     }
 
     pub fn set_global(&mut self, id: &str, ptr: usize) {
@@ -31,7 +32,7 @@ impl Scope {
             p.set_global(id, ptr);
         }
         else {
-            self.variables.insert(id.to_string(), ptr);
+            self.variables.insert(id.to_string(), SilkHandle::StackAllocated(ptr));
         }
     }
 

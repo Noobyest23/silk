@@ -1,7 +1,7 @@
 
 use core::panic;
 use std::collections::{HashMap, HashSet};
-use crate::{environment::scope::Scope, parser::ast::{Program, expr::{ ExprNode, SilkAssignment, SilkOperator}, stmt::StmtNode}};
+use crate::{environment::scope::Scope, parser::ast::{Program, expr::{ ExprNode::{self, FuncCall}, SilkAssignment, SilkOperator}, stmt::StmtNode}};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use colored_text::Colorize;
@@ -13,6 +13,7 @@ type SilkType = usize;
 const SILK_EXIT_OK: i32 = 0;
 const SILK_EXIT_ERROR: i32 = 1;
 
+#[derive(Clone)]
 pub enum SilkHandle {
     HeapAllocated(usize),
     StackAllocated(usize),
@@ -56,17 +57,19 @@ impl VirtualMachine {
 
     pub fn stringify_value(&self, value: &SilkValue) -> String {
         match value {
-            SilkValue::Pointer(ptr) => {
-                if let Some(actual_val) = self.heap.get(ptr) {
-                    
-                    
-                    match actual_val {
-                        SilkValue::String(inner_str) => inner_str.clone(),
-                        _ => self.stringify_value(actual_val),
+            SilkValue::Object(map) => {
+                let mut result = "{".to_string();
+                for (i, (key, value)) in map.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
                     }
-                } else {
-                    "null".to_string()
+                    result.push_str(&format!("{} : {}", key, self.stringify_value(value)));
                 }
+                result.push('}');
+                result
+            }
+            SilkValue::Pointer(ptr) => {
+                self.stringify_value(&self.get_value_from_handle(&SilkHandle::HeapAllocated(*ptr)).expect("Invalid Pointer"))
             }
             SilkValue::List(elements) => {
                 let mut result = "[".to_string();
@@ -92,9 +95,10 @@ impl VirtualMachine {
 
     pub fn stack_push_variable(&mut self, id: String, v: SilkValue) -> SilkHandle {
         let idx = self.stack.len();
-        self.scope.variables.insert(id, idx);
+        let handle = SilkHandle::StackAllocated(idx);
+        self.scope.variables.insert(id, handle.clone());
         self.stack_push(v);
-        SilkHandle::StackAllocated(idx)
+        handle
     }
 
     pub fn stack_pop(&mut self) -> SilkValue {
@@ -124,11 +128,11 @@ impl VirtualMachine {
             return None;
         };
 
-        let Some(SilkValue::String(str)) = self.heap.get(&pointer) else {
+        let Some(SilkValue::String(str)) = self.get_value_from_pointer(pointer).ok() else {
             return None;
         };
 
-        return Some(str.clone());
+        return Some(str.as_str().to_string());
     }
 
     pub fn heap_get_list(&mut self, v: SilkValue) -> Option<Vec<SilkValue>> {
@@ -136,17 +140,21 @@ impl VirtualMachine {
             return None;
         };
 
-        let Some(SilkValue::List(ls)) = self.heap.get(&pointer) else {
+        let Some(SilkValue::List(ls)) = self.get_value_from_pointer(pointer).ok() else {
             return None;
         };
 
-        return Some(ls.clone());
+        return Some(ls);
+    }
+
+    fn get_value_from_pointer(&self, ptr: usize) -> Result<SilkValue, String> {
+        self.heap.get(&ptr).cloned().ok_or_else(|| format!("Invalid heap pointer reference: {}", ptr))
     }
 
     fn get_value_from_handle(&self, handle: &SilkHandle) -> Result<SilkValue, String> {
         match handle {
             SilkHandle::StackAllocated(idx) => Ok(self.stack[*idx].clone()),
-            SilkHandle::HeapAllocated(ptr) => self.heap.get(ptr).cloned().ok_or("Invalid heap pointer reference".to_string()),
+            SilkHandle::HeapAllocated(ptr) => self.get_value_from_pointer(*ptr),
             SilkHandle::HeapElement(ptr, idx) => {
                 if let Some(SilkValue::List(arr)) = self.heap.get(ptr) {
                     Ok(arr[*idx].clone())
@@ -159,8 +167,8 @@ impl VirtualMachine {
                 let parent_value = self.get_value_from_handle(parent)?;
                 match parent_value {
                     SilkValue::Object(map) => map.get(field).cloned().ok_or_else(|| format!("Field '{}' not found on object", field)),
-                    SilkValue::Pointer(ptr) => match self.heap.get(&ptr) {
-                        Some(SilkValue::Object(map)) => map.get(field).cloned().ok_or_else(|| format!("Field '{}' not found on object", field)),
+                    SilkValue::Pointer(ptr) => match self.get_value_from_pointer(ptr) {
+                        Ok(SilkValue::Object(map)) => map.get(field).cloned().ok_or_else(|| format!("Field '{}' not found on object", field)),
                         _ => Err("Cannot access field on a non-object value".to_string()),
                     },
                     _ => Err("Cannot access field on a non-object value".to_string()),
@@ -227,8 +235,8 @@ impl VirtualMachine {
         }
         
         if !import_mode {
-            let variables_declared = self.scope.variables.len();
-            for _i in 0..variables_declared {
+            let stack_var_count = self.scope.variables.values().filter(|handle| matches!(handle, SilkHandle::StackAllocated(_))).count();
+            for _ in 0..stack_var_count {
                 self.stack_pop();
             }
             self.scope = self.scope.pop();
@@ -580,18 +588,15 @@ impl VirtualMachine {
     }
 
     pub fn expr_var(&mut self, id: &String) -> Result<SilkValue, String> {
-        let result = &self.scope.retrieve(id);
-        if let Some(idx) = result.clone() {
-            let v = &self.stack[idx];
+        if let Some(handle) = self.scope.retrieve(id) {
+            return self.get_value_from_handle(&handle);
+        }
+
+        if let Some(v) = self.globals.get(id) {
             return Ok(v.clone())
         }
-        else {
-            if let Some(v) = self.globals.get(id) {
-                return Ok(v.clone())
-            }
-            Result::Err(format!("Variable '{}' was not found in the scope", id))
-        }
-        
+
+        Err(format!("Variable '{}' was not found in the scope", id))
     }
 
     pub fn expr_index_access(&mut self, container: &Box<ExprNode>, idx: &Box<ExprNode>) -> Result<SilkValue, String> {
@@ -739,17 +744,19 @@ impl VirtualMachine {
     }
 
     pub fn expr_call(&mut self, function: &Box<ExprNode>, args: &Vec<ExprNode>) -> Result<SilkValue, String> {
-        
+        self.o_ptr = 0;
         let v_ptr = self.evaluate_expression(function)?;
         
+        let receiver = self.o_ptr;
+        self.o_ptr = 0;
+
         let mut v_args = Vec::with_capacity(args.len());
         for arg in args {
             v_args.push(self.evaluate_expression(arg)?);
         }
 
-        if self.o_ptr != 0 {
-            v_args.insert(0, SilkValue::Pointer(self.o_ptr));
-            self.o_ptr = 0;
+        if receiver != 0 {
+            v_args.insert(0, SilkValue::Pointer(receiver));
         }
 
         let SilkValue::Pointer(ptr) = v_ptr else {
@@ -768,8 +775,21 @@ impl VirtualMachine {
                 self.scope = self.scope.child();
 
                 for (param_name, arg_value) in f_args.iter().zip(v_args) {
-                    self.stack_push(arg_value);
-                    self.scope.variables.insert(param_name.clone(), self.stack.len() - 1); 
+                    self.stack_push_variable(param_name.clone(), arg_value);
+                }
+
+                if receiver != 0 {
+                    let receiver_value = self.heap.get(&receiver).cloned()
+                        .ok_or_else(|| format!("receiver reference was not found in the heap"))?;
+                    if let SilkValue::Object(map) = receiver_value {
+                        let receiver_handle = SilkHandle::HeapAllocated(receiver);
+                        for (name, _) in map {
+                            self.scope.variables.insert(
+                                name.clone(),
+                                SilkHandle::ObjectField(Box::new(receiver_handle.clone()), name.clone()),
+                            );
+                        }
+                    }
                 }
 
                 let return_val = SilkValue::Null;
@@ -777,8 +797,8 @@ impl VirtualMachine {
                     self.evaluate_statement(&stmt); 
                 }
 
-                let variables_declared = self.scope.variables.len();
-                for _ in 0..variables_declared {
+                let stack_var_count = self.scope.variables.values().filter(|handle| matches!(handle, SilkHandle::StackAllocated(_))).count();
+                for _ in 0..stack_var_count {
                     self.stack_pop();
                 }
                 self.scope = self.scope.pop();
@@ -795,13 +815,27 @@ impl VirtualMachine {
                     self.evaluate_statement(stmt);
                 }
 
-                let variables_declared = self.scope.variables.len();
-                let mut struct_map = HashMap::new();
-                for (name, ptr) in &self.scope.variables {
-                    struct_map.insert(name.clone(), self.stack.get(*ptr).expect("stack underflow").clone());
+                if let ExprNode::Var(id) = function.as_ref() {
+                    if self.scope.variables.contains_key(id) {
+                        let constructer_call = ExprNode::FuncCall(Box::new(ExprNode::Var(id.clone())), args.clone());
+                        let _ = self.evaluate_expression(&constructer_call);
+                    }
+                }
+                else {
+                    return Err("Object definition must be called with a variable identifier".to_string());
                 }
 
-                for _idx in 0..variables_declared {
+                let stack_var_count = self.scope.variables.values().filter(|handle| matches!(handle, SilkHandle::StackAllocated(_))).count();
+                let mut struct_map = HashMap::new();
+                for (name, handle) in &self.scope.variables {
+                    if let SilkHandle::StackAllocated(idx) = handle {
+                        if let Some(value) = self.stack.get(*idx) {
+                            struct_map.insert(name.clone(), value.clone());
+                        }
+                    }
+                }
+
+                for _idx in 0..stack_var_count {
                     self.stack_pop();
                 }
                 
@@ -898,17 +932,15 @@ impl VirtualMachine {
     }
 
     pub fn expr_var_as_mut(&mut self, id: &String) -> Result<SilkHandle, String> {
-        let result = &self.scope.retrieve(id);
-        if let Some(idx) = result.clone() {
-            return Ok(SilkHandle::StackAllocated(idx))
+        if let Some(handle) = self.scope.retrieve(id) {
+            return Ok(handle);
         }
-        else {
-            let is_global = &self.globals.get(id);
-            if let Some(_v) = is_global {
-                return Ok(SilkHandle::GlobalValue(id.clone()));
-            }
-            Result::Err(format!("Variable '{}' was not found in the scope", id))
+
+        if self.globals.contains_key(id) {
+            return Ok(SilkHandle::GlobalValue(id.clone()));
         }
+
+        Err(format!("Variable '{}' was not found in the scope", id))
     }
 
     pub fn expr_index_access_as_mut(&mut self, container: &Box<ExprNode>, idx: &Box<ExprNode>) -> Result<SilkHandle, String> {
@@ -947,5 +979,48 @@ impl VirtualMachine {
 
     pub fn expr_dot_access_as_mut(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkHandle, String> {
         self.expr_dot_as_mut(object, accessee)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn receiver_member_variables_can_be_mutated_via_mut_handle() {
+        let mut vm = VirtualMachine::new();
+        let object_ptr = match vm.heap_allocate(SilkValue::Object(HashMap::from([("bar".to_string(), SilkValue::Int(10))]))) {
+            SilkHandle::HeapAllocated(ptr) => ptr,
+            _ => unreachable!(),
+        };
+
+        vm.scope.variables.insert(
+            "bar".to_string(),
+            SilkHandle::ObjectField(Box::new(SilkHandle::HeapAllocated(object_ptr)), "bar".to_string()),
+        );
+
+        let handle = vm.expr_var_as_mut(&"bar".to_string()).unwrap();
+        vm.set_value_in_handle(&handle, SilkValue::Int(20)).unwrap();
+
+        let value = vm.get_value_from_handle(&handle).unwrap();
+        assert!(matches!(value, SilkValue::Int(20)));
+
+        let Some(SilkValue::Object(map)) = vm.heap.get(&object_ptr).cloned() else {
+            std::panic!("expected heap object to be preserved");
+        };
+        assert!(matches!(map.get("bar"), Some(SilkValue::Int(20))));
+    }
+
+    #[test]
+    fn extracts_value_from_pointer() {
+        let mut vm = VirtualMachine::new();
+        let value = SilkValue::Int(42);
+        let handle = vm.heap_allocate(value.clone());
+        let ptr = match handle {
+            SilkHandle::HeapAllocated(ptr) => ptr,
+            _ => unreachable!(),
+        };
+
+        assert!(matches!(vm.get_value_from_pointer(ptr).unwrap(), SilkValue::Int(42)));
     }
 }

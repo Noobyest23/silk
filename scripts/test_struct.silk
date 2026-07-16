@@ -2,11 +2,25 @@ import "io"
 
 struct Foo {
     var bar = 10
+    func Foo(n_bar) {
+        bar = n_bar
+    }
+
+    func add_ten() {
+        bar += 10
+    }
 }
 
 print(Foo())
 #print(bar)
 
-var my_foo = Foo()
-my_foo.bar = 2
+var my_foo = Foo(2)
 print(my_foo.bar)
+
+my_foo.add_ten()
+print(my_foo.bar)
+# func                                 
+#  |     \
+# var(print) [dot (o_ptr = ptr?)] == func(o_ptr, my_foo.bar)
+#          /     \
+#    var(my_foo) var(bar)

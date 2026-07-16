@@ -31,8 +31,11 @@ impl fmt::Display for SilkValue {
             SilkValue::String(str) => write!(f, "{}", str),
             SilkValue::Object(obj) => {
                 write!(f, "{{")?;
-                for (key, value) in obj {
-                    write!(f, "{} : {}", key, value)?;
+                for (i, value) in obj.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{} : {}", value.0, value.1)?;
                 }
                 write!(f, "}}")
             }
