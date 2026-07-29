@@ -1,3 +1,2 @@
 import "io"
 print("Hello World!")
-var msg = "Hello World!"

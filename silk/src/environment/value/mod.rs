@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::{fmt};
 use std::cmp::Ordering;
+use std::ffi::{c_char, c_void};
 use crate::environment::vm::{VirtualMachine};
-use crate::parser::ast::stmt::StmtNode;
+use crate::parser::ast::{ProgramStatement, stmt::StmtNode};
 
 pub type NativeFn = fn (vm: &mut VirtualMachine, &Vec<SilkValue>) -> SilkValue;
+pub type CFn = *const c_void;
 
 #[derive(Clone, Debug)]
 pub enum SilkValue {
@@ -15,10 +17,11 @@ pub enum SilkValue {
     String(String),
     Object(HashMap<String, SilkValue>),
     List(Vec<SilkValue>),
-    Function(Vec<String>, Vec<StmtNode>),
+    Function(Vec<String>, Vec<ProgramStatement>),
     NativeFn(NativeFn, String),
+    CFn(CFn, String),
     Pointer(usize),
-    ObjectDefinition(Vec<StmtNode>),
+    ObjectDefinition(Vec<ProgramStatement>),
 }
 
 impl fmt::Display for SilkValue {
@@ -52,20 +55,23 @@ impl fmt::Display for SilkValue {
             SilkValue::Function(args, body) => {
                 write!(f, "({}) {{", args.join(", "))?;
                 for stmt in body {
-                    write!(f, "\n    {}", stmt)?;
+                    write!(f, "\n    {}", stmt.node)?;
                 }
                 write!(f, "\n}}")
             },
             SilkValue::NativeFn(_, desc) => {
                 write!(f, "(Native Function: {})", desc)
             },
+            SilkValue::CFn(_, desc) => {
+                write!(f, "(C Function: {})", desc)
+            }
             SilkValue::Pointer(ptr) => {
                 write!(f, "ptr({})", ptr)
             },
             SilkValue::ObjectDefinition(def) => {
                 write!(f, "Struct Definition {{")?;
                 for stmt in def {
-                    write!(f, "\n    {}", stmt)?;
+                    write!(f, "\n    {}", stmt.node)?;
                 }
                 write!(f, "\n}}")
             }
@@ -84,6 +90,7 @@ impl SilkValue {
             SilkValue::List(l) => !l.is_empty(),
             SilkValue::Function(_, _) => true,
             SilkValue::NativeFn(_, _) => true,
+            SilkValue::CFn(_, _) => true,
             SilkValue::Object(_) => true,
             SilkValue::Pointer(ptr) => *ptr == 0 as usize,
             SilkValue::ObjectDefinition(_) => false,

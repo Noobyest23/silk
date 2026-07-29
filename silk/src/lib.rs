@@ -78,9 +78,14 @@ pub unsafe extern "C" fn run(path_ptr: *const c_char) {
             let tokens = lexer.tokenize();
         
             let mut parser = Parser::new(tokens);
-            let program = parser.parse();
+            let o_program = parser.parse();
 
-            vm.execute(program, false);
+            if let Some(program) = o_program {
+                vm.execute(program, false);
+            }
+            else {
+                eprintln!("[Silk Error] Could not execute script");
+            }
 
         } else {
             eprintln!("[Silk Error] Could not read file path: {}", path_str);
@@ -103,9 +108,14 @@ pub fn run_source(source: &str) {
     let tokens = lexer.tokenize();
 
     let mut parser = Parser::new(tokens);
-    let program = parser.parse();
+    let o_program = parser.parse();
 
-    vm.execute(program, false);
+    if let Some(program) = o_program {
+        vm.execute(program, false);
+    }
+    else {
+        eprintln!("[Silk Error] Could not execute script");
+    }
 }
 
 #[unsafe(no_mangle)]

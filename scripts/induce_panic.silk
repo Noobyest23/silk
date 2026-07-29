@@ -1,0 +1,10 @@
+import io
+
+var is_linux = true
+
+if (true) {
+    print(is_linux + 1)
+    print(is_linux)
+}
+
+

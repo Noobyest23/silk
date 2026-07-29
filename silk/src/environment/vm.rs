@@ -1,7 +1,14 @@
 
 use core::panic;
 use std::collections::{HashMap, HashSet};
-use crate::{environment::scope::Scope, parser::ast::{Program, expr::{ ExprNode::{self, FuncCall}, SilkAssignment, SilkOperator}, stmt::StmtNode}};
+use crate::{
+    environment::scope::Scope,
+    parser::ast::{
+        Program, ProgramExpression, ProgramStatement,
+        expr::{ExprNode::{self}, SilkAssignment, SilkOperator},
+        stmt::StmtNode,
+    },
+};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use colored_text::Colorize;
@@ -37,6 +44,7 @@ pub struct VirtualMachine {
     pub modules: HashMap<String, HashMap<String, SilkValue>>,
     
     o_ptr: usize,
+
 }
 
 impl VirtualMachine {
@@ -229,7 +237,7 @@ impl VirtualMachine {
         for stmt in program.statements {
             let err_code = self.evaluate_statement(&stmt);
             if let Some(error_msg) = err_code {
-                println!("{}: {}", "[Silk Runtime Error]".red(), error_msg.yellow());
+                println!("{}: {}.", "[Silk Runtime Error]".red(), error_msg.yellow());
                 return 1;
             }
         }
@@ -316,9 +324,9 @@ impl VirtualMachine {
         }
     }
 
-    pub fn evaluate_statement(&mut self, statement: &StmtNode) -> Option<String> {
+    pub fn evaluate_statement(&mut self, statement: &ProgramStatement) -> Option<String> {
 
-        match statement {
+        match statement.node.as_ref() {
             StmtNode::VarDecl(id, initializer) => self.stmt_var_decl(id, initializer),
             StmtNode::FuncDecl(id, args, body) => self.stmt_func_decl(id, args, body),
             StmtNode::If(conditional, truthy, falsey) => self.stmt_if(conditional, truthy, falsey),
@@ -337,12 +345,13 @@ impl VirtualMachine {
                             let mut lexer = Lexer::new(&src);
                             let tokens = lexer.tokenize();
                             let mut parser = Parser::new(tokens);
-                            let program = parser.parse();
+                            let Some(program) = parser.parse() else {
+                                return Some(format!("Failed to parse module '{}'", module_name));
+                            };
 
-                            
                             let exit_code = self.execute(program, true);
                             if exit_code != SILK_EXIT_OK {
-                                return Some(format!("Error occurred while importing silk file '{}'", module_name));
+                                return Some(format!("Error occurred while importing silk file '{}'.", module_name));
                             }
                             Option::None
                         }
@@ -365,11 +374,11 @@ impl VirtualMachine {
             },
             StmtNode::Global(stmt) => self.evaluate_global_statement(stmt),
             StmtNode::StructDecl(id, data) => self.stmt_struct_decl(id, data),
-            _ => {Some(format!("Statement evaluation for {} has not been implemented", statement))}
+            _ => {Some(format!("Statement evaluation for {:?} has not been implemented", statement.node))}
         }
     }
 
-    pub fn stmt_var_decl(&mut self, identifier: &String, initializer: &ExprNode) -> Option<String> {
+    pub fn stmt_var_decl(&mut self, identifier: &String, initializer: &ProgramExpression) -> Option<String> {
         if self.scope.variables.contains_key(identifier) {
             return Some(format!("Cannot declare variable '{}' because it already exists in the scope!", identifier));
         }
@@ -384,7 +393,7 @@ impl VirtualMachine {
         }
     }
 
-    pub fn stmt_func_decl(&mut self, id: &String, args: &Vec<String>, body: &Vec<StmtNode>) -> Option<String> {
+    pub fn stmt_func_decl(&mut self, id: &String, args: &Vec<String>, body: &Vec<ProgramStatement>) -> Option<String> {
         if self.scope.variables.contains_key(id) {
             return Some(format!("Cannot declare variable '{}' because it already exists in the scope!", id));
         }
@@ -400,7 +409,7 @@ impl VirtualMachine {
         Option::None
     }
 
-    pub fn stmt_if(&mut self, condition: &ExprNode, truthy: &Vec<StmtNode>, falsey: &Vec<StmtNode>) -> Option<String> {
+    pub fn stmt_if(&mut self, condition: &ProgramExpression, truthy: &Vec<ProgramStatement>, falsey: &Vec<ProgramStatement>) -> Option<String> {
         let result = self.evaluate_expression(condition);
         match result {
             Ok(value) => {
@@ -434,7 +443,7 @@ impl VirtualMachine {
         
     }
 
-    pub fn evaluate_expression_statement(&mut self, expression: ExprNode) -> Option<String> {
+    pub fn evaluate_expression_statement(&mut self, expression: ProgramExpression) -> Option<String> {
         let result = self.evaluate_expression(&expression);
         match result {
             Ok(_v) => Option::None,
@@ -442,8 +451,8 @@ impl VirtualMachine {
         }
     }
 
-    pub fn evaluate_global_statement(&mut self, statement: &Box<StmtNode>) -> Option<String> {
-        match statement.as_ref() {
+    pub fn evaluate_global_statement(&mut self, statement: &ProgramStatement) -> Option<String> {
+        match statement.node.as_ref() {
             StmtNode::VarDecl(name, init) => {
                 let does_exist = self.scope.retrieve(name);
                 if let Some(_global) = does_exist {
@@ -485,9 +494,10 @@ impl VirtualMachine {
                             let mut lexer = Lexer::new(&src);
                             let tokens = lexer.tokenize();
                             let mut parser = Parser::new(tokens);
-                            let program = parser.parse();
+                            let Some(program) = parser.parse() else {
+                                return Some(format!("Failed to parse module '{}'", module_name));
+                            };
 
-                            
                             self.execute(program, true);
                             Option::None
                         }
@@ -508,11 +518,11 @@ impl VirtualMachine {
                     }
                 }
             }
-            _ => {Some(format!("Statement {} cannot be evaluated as global", statement))}
+            _ => {Some(format!("Statement {} cannot be evaluated as global", statement.node))}
         }
     }
 
-    pub fn stmt_struct_decl(&mut self, id: &String, data: &Vec<StmtNode>) -> Option<String> {
+    pub fn stmt_struct_decl(&mut self, id: &String, data: &Vec<ProgramStatement>) -> Option<String> {
         if self.scope.retrieve(id).is_some() {
             return Some(format!("identifier '{}' already exists in scope", id));
         }
@@ -525,9 +535,9 @@ impl VirtualMachine {
         None
     }
 
-    pub fn evaluate_expression(&mut self, expression: &ExprNode) -> Result<SilkValue, String> {
+    pub fn evaluate_expression(&mut self, expression: &ProgramExpression) -> Result<SilkValue, String> {
         
-        match expression {
+        match expression.node.as_ref() {
             ExprNode::IntLiteral(num) => Ok(SilkValue::Int(*num)),
             ExprNode::FloatLiteral(num) => Ok(SilkValue::Float(*num)),
             ExprNode::BoolLiteral(truthy) => Ok(SilkValue::Bool(*truthy)),
@@ -547,18 +557,18 @@ impl VirtualMachine {
                             SilkValue::Bool(b) => Ok(SilkValue::Bool(!b)),
                             SilkValue::Float(num) => Ok(SilkValue::Float(-num)),
                             SilkValue::Int(num) => Ok(SilkValue::Int(-num)),
-                            _ => Err(format!("Unary operation is unavailble for expression {}", expr)),
+                            _ => Err(format!("Unary operation is unavailble for expression {}", expr.node.as_ref())),
                         }
                     }
                     Err(e) => Err(e)
                 }
             }
             ExprNode::DotAccess(c, accessee) => self.expr_dot(c, accessee),
-            _ => {Err(format!("Expression evaluation for {} has not been implemented", expression))}
+            _ => {Err(format!("Expression evaluation for {} has not been implemented", expression.node.as_ref()))}
         }
     }
 
-    pub fn expr_array_lit(&mut self, arr: &Vec<ExprNode>) -> Result<SilkValue, String> {
+    pub fn expr_array_lit(&mut self, arr: &Vec<ProgramExpression>) -> Result<SilkValue, String> {
         let mut v_arr: Vec<SilkValue> = vec![SilkValue::Null; arr.len()];
         for idx in 0..arr.len() {
             let result = self.evaluate_expression(&arr[idx]);
@@ -599,7 +609,7 @@ impl VirtualMachine {
         Err(format!("Variable '{}' was not found in the scope", id))
     }
 
-    pub fn expr_index_access(&mut self, container: &Box<ExprNode>, idx: &Box<ExprNode>) -> Result<SilkValue, String> {
+    pub fn expr_index_access(&mut self, container: &ProgramExpression, idx: &ProgramExpression) -> Result<SilkValue, String> {
         let v_container = self.evaluate_expression(container)?;
         let v_index = self.evaluate_expression(idx)?;
         
@@ -623,7 +633,7 @@ impl VirtualMachine {
         }
     }
 
-    pub fn expr_op(&mut self, lhs: &Box<ExprNode>, rhs: &Box<ExprNode>, op: &SilkOperator) -> Result<SilkValue, String> {
+    pub fn expr_op(&mut self, lhs: &ProgramExpression, rhs: &ProgramExpression, op: &SilkOperator) -> Result<SilkValue, String> {
         
         let l_value = self.evaluate_expression(lhs)?;
         let r_value = self.evaluate_expression(rhs)?;
@@ -691,7 +701,7 @@ impl VirtualMachine {
         }
     }
 
-    pub fn expr_assignment_op(&mut self, lhs: &Box<ExprNode>, rhs: &Box<ExprNode>, op: &SilkAssignment) -> Result<SilkValue, String> {
+    pub fn expr_assignment_op(&mut self, lhs: &ProgramExpression, rhs: &ProgramExpression, op: &SilkAssignment) -> Result<SilkValue, String> {
         
         let l_handle = self.evaluate_expression_as_mut(lhs)?;
         let r_value = self.evaluate_expression(rhs)?;
@@ -743,7 +753,7 @@ impl VirtualMachine {
         Ok(final_value)
     }
 
-    pub fn expr_call(&mut self, function: &Box<ExprNode>, args: &Vec<ExprNode>) -> Result<SilkValue, String> {
+    pub fn expr_call(&mut self, function: &ProgramExpression, args: &Vec<ProgramExpression>) -> Result<SilkValue, String> {
         self.o_ptr = 0;
         let v_ptr = self.evaluate_expression(function)?;
         
@@ -794,7 +804,7 @@ impl VirtualMachine {
 
                 let return_val = SilkValue::Null;
                 for stmt in body {
-                    self.evaluate_statement(&stmt); 
+                    self.evaluate_statement(&stmt);
                 }
 
                 let stack_var_count = self.scope.variables.values().filter(|handle| matches!(handle, SilkHandle::StackAllocated(_))).count();
@@ -815,10 +825,11 @@ impl VirtualMachine {
                     self.evaluate_statement(stmt);
                 }
 
-                if let ExprNode::Var(id) = function.as_ref() {
+                if let ExprNode::Var(id) = function.node.as_ref() {
                     if self.scope.variables.contains_key(id) {
-                        let constructer_call = ExprNode::FuncCall(Box::new(ExprNode::Var(id.clone())), args.clone());
-                        let _ = self.evaluate_expression(&constructer_call);
+                        let constructor_callee = ProgramExpression::new(ExprNode::Var(id.clone()), 0, 0);
+                        let constructor_call = ExprNode::FuncCall(constructor_callee, args.clone());
+                        let _ = self.evaluate_expression(&ProgramExpression::new(constructor_call, 0, 0));
                     }
                 }
                 else {
@@ -854,7 +865,7 @@ impl VirtualMachine {
         }
     }
 
-    pub fn expr_dot(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkValue, String> {
+    pub fn expr_dot(&mut self, object: &ProgramExpression, accessee: &ProgramExpression) -> Result<SilkValue, String> {
         let o_object = self.evaluate_expression(object)?;
 
         let (_ptr, v_object) = match o_object {
@@ -881,7 +892,7 @@ impl VirtualMachine {
                     }
                 }
 
-                let result = self.evaluate_expression(&accessee);
+                let result = self.evaluate_expression(accessee);
 
                 let variables_created = self.scope.variables.len();
                 for _ in 0..variables_created {
@@ -901,7 +912,7 @@ impl VirtualMachine {
                     }
                 }
 
-                let result = self.evaluate_expression(&accessee);
+                let result = self.evaluate_expression(accessee);
 
                 let variables_created = self.scope.variables.len();
                 for _ in 0..variables_created {
@@ -911,7 +922,7 @@ impl VirtualMachine {
                 result
             },
             SilkValue::Object(map) => {
-                let field_name = match accessee.as_ref() {
+                let field_name = match accessee.node.as_ref() {
                     ExprNode::Var(id) => id,
                     _ => return Err("Struct field access requires a field name".to_string()),
                 };
@@ -922,8 +933,8 @@ impl VirtualMachine {
         }
     }
 
-    pub fn evaluate_expression_as_mut(&mut self, expression: &ExprNode) -> Result<SilkHandle, String> {
-        match expression {
+    pub fn evaluate_expression_as_mut(&mut self, expression: &ProgramExpression) -> Result<SilkHandle, String> {
+        match expression.node.as_ref() {
             ExprNode::Var(id) => self.expr_var_as_mut(id),
             ExprNode::IndexAccess(container, idx) => self.expr_index_access_as_mut(container, idx),
             ExprNode::DotAccess(object, accessee) => self.expr_dot_as_mut(object, accessee),
@@ -943,12 +954,12 @@ impl VirtualMachine {
         Err(format!("Variable '{}' was not found in the scope", id))
     }
 
-    pub fn expr_index_access_as_mut(&mut self, container: &Box<ExprNode>, idx: &Box<ExprNode>) -> Result<SilkHandle, String> {
+    pub fn expr_index_access_as_mut(&mut self, container: &ProgramExpression, idx: &ProgramExpression) -> Result<SilkHandle, String> {
         let v_container = self.evaluate_expression(container)?;
         let v_index = self.evaluate_expression(idx)?;
         
         let v_int = v_index.as_int().ok_or_else(|| "Array index must be an integer".to_string())?;
-
+        
         match v_container {
             SilkValue::Pointer(ptr) => {
                 
@@ -968,16 +979,15 @@ impl VirtualMachine {
         }
     }
 
-    pub fn expr_dot_as_mut(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkHandle, String> {
+    pub fn expr_dot_as_mut(&mut self, object: &ProgramExpression, accessee: &ProgramExpression) -> Result<SilkHandle, String> {
         let parent_handle = self.evaluate_expression_as_mut(object)?;
-
-        match accessee.as_ref() {
+        match accessee.node.as_ref() {
             ExprNode::Var(field_name) => Ok(SilkHandle::ObjectField(Box::new(parent_handle), field_name.clone())),
             _ => Err("Struct field access as mutable requires a field name".to_string()),
         }
     }
 
-    pub fn expr_dot_access_as_mut(&mut self, object: &Box<ExprNode>, accessee: &Box<ExprNode>) -> Result<SilkHandle, String> {
+    pub fn expr_dot_access_as_mut(&mut self, object: &ProgramExpression, accessee: &ProgramExpression) -> Result<SilkHandle, String> {
         self.expr_dot_as_mut(object, accessee)
     }
 }

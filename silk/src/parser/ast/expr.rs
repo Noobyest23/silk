@@ -1,4 +1,5 @@
 use std::{collections::HashMap, fmt};
+use crate::parser::ast::ProgramExpression;
 
 #[derive(Clone, Debug)]
 pub enum SilkOperator {
@@ -41,7 +42,8 @@ impl fmt::Display for SilkOperator {
             SilkOperator::GreaterThanEq => ">=",
             SilkOperator::LesserThanEq => "<=",
             SilkOperator::And => "and",
-            SilkOperator::Or => "or",
+            SilkOperator::Or 
+            => "or",
         };
         write!(f, "{}", s)
     }
@@ -68,21 +70,21 @@ pub enum ExprNode {
     FloatLiteral(f32),
     BoolLiteral(bool),
     StringLiteral(String),
-    ArrayLiteral(Vec<ExprNode>),
-    StructLiteral(HashMap<String, ExprNode>),
+    ArrayLiteral(Vec<ProgramExpression>),
+    StructLiteral(HashMap<String, ProgramExpression>),
     NullLiteral,
     // expr is the function to be called, and the vector is the arguments
-    FuncCall(Box<ExprNode>, Vec<ExprNode>),
+    FuncCall(ProgramExpression, Vec<ProgramExpression>),
     // rhs, lhs, operator
-    Op(Box<ExprNode>, Box<ExprNode>, SilkOperator),
-    AssignmentOp(Box<ExprNode>, Box<ExprNode>, SilkAssignment),
+    Op(ProgramExpression, ProgramExpression, SilkOperator),
+    AssignmentOp(ProgramExpression, ProgramExpression, SilkAssignment),
     Var(String),
     // owner, expression to evaluate after pushing scope
-    DotAccess(Box<ExprNode>, Box<ExprNode>),
+    DotAccess(ProgramExpression, ProgramExpression),
     // owner, index
-    IndexAccess(Box<ExprNode>, Box<ExprNode>),
+    IndexAccess(ProgramExpression, ProgramExpression),
     // expression
-    Unary(Box<ExprNode>),
+    Unary(ProgramExpression),
 }
 
 impl fmt::Display for ExprNode {
@@ -96,14 +98,14 @@ impl fmt::Display for ExprNode {
                 write!(f, "[")?;
                 for (i, expr) in arr.iter().enumerate() {
                     if i > 0 { write!(f, ", ")?;}
-                    write!(f, "{}", expr)?;
+                    write!(f, "{}", expr.node)?;
                 }
                 write!(f, "]")
             }
             ExprNode::StructLiteral(values) => {
                 write!(f, "{{")?;
                 for (key, value) in values {
-                    write!(f, "{} : {}", key, value)?;
+                    write!(f, "{} : {}", key, value.node)?;
                 }
                 write!(f, "}}")
             }
@@ -111,18 +113,18 @@ impl fmt::Display for ExprNode {
 
             ExprNode::Op(lhs, rhs, op) => {
                 // This handles the recursion automatically
-                write!(f, "({} {} {})", lhs, op, rhs)
+                write!(f, "({} {} {})", lhs.node, op, rhs.node)
             }
             
             ExprNode::AssignmentOp(lhs, rhs, op) => {
-                write!(f, "({} {} {})", lhs, op, rhs)
+                write!(f, "({} {} {})", lhs.node, op, rhs.node)
             }
 
             ExprNode::FuncCall(func, args) => {
-                write!(f, "{}(", func)?; // Note the '?' for error propagation
+                write!(f, "{}(", func.node)?; // Note the '?' for error propagation
                 for (i, arg) in args.iter().enumerate() {
                     if i > 0 { write!(f, ", ")?; }
-                    write!(f, "{}", arg)?;
+                    write!(f, "{}", arg.node)?;
                 }
                 write!(f, ")")
             }
@@ -130,13 +132,13 @@ impl fmt::Display for ExprNode {
                 write!(f, "{}", id)
             }
             ExprNode::DotAccess(owner, expr) => {
-                write!(f, "{}.{}", owner, expr)
+                write!(f, "{}.{}", owner.node, expr.node)
             }
             ExprNode::IndexAccess(owner, index) => {
-                write!(f, "{}[{}]", owner, index)
+                write!(f, "{}[{}]", owner.node, index.node)
             }
             ExprNode::Unary(expression) => {
-                write!(f, "-{}", expression)
+                write!(f, "-{}", expression.node)
             }
         }
     }

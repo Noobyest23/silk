@@ -1,22 +1,24 @@
+use crate::parser::ast::{ProgramExpression, ProgramStatement};
+
 use super::expr::ExprNode;
 use std::fmt;
 
 #[derive(Clone, Debug)]
 pub enum StmtNode {
-    VarDecl(String, ExprNode),
-    FuncDecl(String, Vec<String>, Vec<StmtNode>),
-    StructDecl(String, Vec<StmtNode>), // struct foo {var bar = 10 func read_bar() {return bar}}
+    VarDecl(String, ProgramExpression),
+    FuncDecl(String, Vec<String>, Vec<ProgramStatement>),
+    StructDecl(String, Vec<ProgramStatement>), // struct foo {var bar = 10 func read_bar() {return bar}}
     Import(String, String), // optional import as
-    StandaloneExpression(ExprNode),
-    Return(ExprNode),
-    If(ExprNode, Vec<StmtNode>, Vec<StmtNode>),
-    Global(Box<StmtNode>), // global declaration. global var blah = 2031049102
+    StandaloneExpression(ProgramExpression),
+    Return(ProgramExpression),
+    If(ProgramExpression, Vec<ProgramStatement>, Vec<ProgramStatement>),
+    Global(ProgramStatement), // global declaration. global var blah = 2031049102
 }
 
 impl fmt::Display for StmtNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            StmtNode::VarDecl(name, expr) => write!(f, "var {} = {}", name, expr),
+            StmtNode::VarDecl(name, expr) => write!(f, "var {} = {}", name, expr.node),
             StmtNode::FuncDecl(name, args, body) => {
                 write!(f, "func {}(", name)?;
                 for (i, arg) in args.iter().enumerate() {
@@ -25,7 +27,7 @@ impl fmt::Display for StmtNode {
                 }
                 write!(f, ") {{")?;
                 for (_i, stmt) in body.iter().enumerate() {
-                    write!(f, "{}\n", stmt)?;
+                    write!(f, "{}\n", stmt.node)?;
                 }
                 write!(f, "}}")
             }
@@ -41,25 +43,25 @@ impl fmt::Display for StmtNode {
                 write!(f, "func {}", name)?;
                 write!(f, " {{")?;
                 for (_i, stmt) in body.iter().enumerate() {
-                    write!(f, "{}\n", stmt)?;
+                    write!(f, "{}\n", stmt.node)?;
                 }
                 write!(f, "}}")
             }
-            StmtNode::StandaloneExpression(expr) => write!(f, "(standalone) {}", expr),
-            StmtNode::Return(value) => write!(f, "return {}", value),
+            StmtNode::StandaloneExpression(expr) => write!(f, "(standalone) {}", expr.node),
+            StmtNode::Return(value) => write!(f, "return {}", value.node),
             StmtNode::If(condition, truthy, falsy) => {
-                write!(f, "if {} '{{'\n", condition);
+                write!(f, "if {} '{{'\n", condition.node);
                 for truthy_stmt in truthy {
-                    write!(f, "{}\n", truthy_stmt);
+                    write!(f, "{}\n", truthy_stmt.node);
                 }
                 write!(f, "else '{{'\n");
                 for falsy_stmt in falsy {
-                    write!(f, "{}\n", falsy_stmt);
+                    write!(f, "{}\n", falsy_stmt.node);
                 }
                 write!(f, "}}")
             }
             StmtNode::Global(stmt) => {
-                write!(f, "global {}", stmt)
+                write!(f, "global {}", stmt.node)
             }
         }
     }

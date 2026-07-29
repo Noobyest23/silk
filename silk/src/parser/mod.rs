@@ -1,6 +1,6 @@
 pub mod ast;
 
-use crate::{lexer::token::{Token, TokenType}, parser::ast::{Program, expr::{ExprNode, SilkAssignment, SilkOperator}, stmt::StmtNode}};
+use crate::{lexer::token::{Token, TokenType}, parser::ast::{Program, ProgramExpression, ProgramStatement, expr::{ExprNode::{self, Unary}, SilkAssignment, SilkOperator}, stmt::StmtNode::{self, VarDecl}}};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -12,15 +12,20 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Program {
+    pub fn parse(&mut self) -> Option<Program> {
         let mut statements = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.parse_statement());
+            let res = self.parse_statement();
+            match res {
+                Ok(stmt) => statements.push(stmt),
+                Err(e) => {
+                    self.err(&e);
+                    return None;
+                }
+            }
         }
-        Program { statements }
+        Some(Program { statements })
     }
-
-    
 
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
@@ -85,41 +90,59 @@ impl Parser {
 
 
 impl Parser {
-    fn parse_statement(&mut self) -> StmtNode {
+    fn parse_statement(&mut self) -> Result<ProgramStatement, String> {
         match &self.peek().t {
             TokenType::Var => self.parse_var_declaration(),
             TokenType::Func => self.parse_func_declaration(),
             TokenType::Import => self.parse_import(),
             TokenType::Return => {
                 self.advance();
-                StmtNode::Return(self.parse_expression())
+                let res = self.parse_expression();
+                match res {
+                    Ok(expr) => Ok(ProgramStatement::new(StmtNode::Return(expr.clone()), expr.line, expr.column)),
+                    Err(msg) => Err(msg)
+                }
             }
             TokenType::If => self.parse_if(),
             TokenType::Global => {
                 self.advance();
-                StmtNode::Global(Box::new(self.parse_statement()))
+                let res = self.parse_statement();
+                match res {
+                    Ok(expr) => Ok(ProgramStatement::new(StmtNode::Global(expr.clone()), expr.line, expr.column)),
+                    Err(msg) => Err(msg)
+                }
             }
             TokenType::Struct => self.parse_struct(),
-            _ => StmtNode::StandaloneExpression(self.parse_expression()),
+            _ => {
+                let res = self.parse_expression();
+                match res {
+                    Ok(expr) => Ok(ProgramStatement::new(StmtNode::StandaloneExpression(expr.clone()), expr.line, expr.column)),
+                    Err(msg) => Err(msg)
+                }
+            }
         }
     }
 
-    fn parse_var_declaration(&mut self) -> StmtNode {
+    fn parse_var_declaration(&mut self) -> Result<ProgramStatement, String> {
         self.advance(); 
 
         let name = self.extract_id();
 
-        let mut expr = ExprNode::NullLiteral;
+        let mut expr = ProgramExpression::new(ExprNode::NullLiteral, self.peek().line, self.peek().column);
 
         if self.check(TokenType::Equal) {
             self.advance();
-            expr = self.parse_expression();
+            let res = self.parse_expression();
+            match res {
+                Ok(oexpr) => expr = oexpr,
+                Err(e) => {return Err(e);}
+            }
         }
 
-        StmtNode::VarDecl(name, expr)
+        Ok(ProgramStatement::new(VarDecl(name, expr), self.peek().line, self.peek().column))
     }
 
-    fn parse_func_declaration(&mut self) -> StmtNode {
+    fn parse_func_declaration(&mut self) -> Result<ProgramStatement, String> {
         self.advance(); 
         let name = self.extract_id();
 
@@ -133,17 +156,21 @@ impl Parser {
         }
         self.expect(TokenType::CloseParen);
 
-        let mut statements: Vec<StmtNode> = Vec::new();
+        let mut statements: Vec<ProgramStatement> = Vec::new();
         self.expect(TokenType::OpenSquiggly); 
         while !self.is_at_end() && !self.check(TokenType::CloseSquiggly) {
-            statements.push(self.parse_statement());
+            let res = self.parse_statement();
+            match res {
+                Ok(stmt) => statements.push(stmt),
+                Err(msg) => {return Err(msg);}
+            }
         }
         self.expect(TokenType::CloseSquiggly); 
 
-        StmtNode::FuncDecl(name, args, statements)
+        Ok(ProgramStatement::new(StmtNode::FuncDecl(name, args, statements), self.peek().line, self.peek().column))
     }
 
-    fn parse_import(&mut self) -> StmtNode {
+    fn parse_import(&mut self) -> Result<ProgramStatement, String> {
         self.advance(); 
         
         
@@ -160,67 +187,76 @@ impl Parser {
             alias_name = self.extract_id();
         }
 
-        StmtNode::Import(module_name, alias_name)
+        Ok(ProgramStatement::new(StmtNode::Import(module_name, alias_name), self.peek().line, self.peek().column))
     }
 
-    fn parse_if(&mut self) -> StmtNode {
+    fn parse_if(&mut self) -> Result<ProgramStatement, String> {
         self.advance();
-        let condition = self.parse_expression();
+        let condition = self.parse_expression()?;
+
         let mut true_body = Vec::new();
         let mut false_body = Vec::new();
         self.expect(TokenType::OpenSquiggly);
         while !self.check(TokenType::CloseSquiggly) {
-            true_body.push(self.parse_statement());
+            let res = self.parse_statement();
+            match res {
+                Ok(stmt) => true_body.push(stmt),
+                Err(msg) => {return Err(msg);}
+            }
         }
         self.advance();
         if self.check(TokenType::Else) {
             self.advance();
             self.expect(TokenType::OpenSquiggly);
             while !self.check(TokenType::CloseSquiggly) {
-                false_body.push(self.parse_statement());
+                let res = self.parse_statement();
+                match res {
+                    Ok(stmt) => false_body.push(stmt),
+                    Err(msg) => {return Err(msg);}
+                }
             }
             self.advance();
         }
 
-        StmtNode::If(condition, true_body, false_body)
+        Ok(ProgramStatement::new(StmtNode::If(condition, true_body, false_body), self.peek().line, self.peek().column))
     }
 
-    fn parse_struct(&mut self) -> StmtNode {
+    fn parse_struct(&mut self) -> Result<ProgramStatement, String> {
         self.advance();
         let name = self.extract_id();
         self.expect(TokenType::OpenSquiggly);
         let mut struct_body = Vec::new();
         while !self.check(TokenType::CloseSquiggly) {
-            let stmt = self.parse_statement();
-            match stmt {
-                StmtNode::VarDecl(_, _) => struct_body.push(stmt), 
+            let stmt = self.parse_statement()?;
+            match stmt.node.as_ref() {
+                StmtNode::VarDecl(_, _) => struct_body.push(stmt),
                 StmtNode::FuncDecl(_, _, _) => struct_body.push(stmt),
-                _ => panic!("unexpected statement in struct body"),
+                _ => {
+                    return Err(format!("Unexpected statement in struct body '{}'", stmt.node));
+                }
             };
         }
         self.advance();
-        return StmtNode::StructDecl(name, struct_body);
+        Ok(ProgramStatement::new(StmtNode::StructDecl(name, struct_body), self.peek().line, self.peek().column))
     }
 }
 
 impl Parser {
-    fn parse_expression(&mut self) -> ExprNode {
+    fn parse_expression(&mut self) -> Result<ProgramExpression, String> {
         self.parse_assignment()
     }
 
-    fn parse_assignment(&mut self) -> ExprNode {
-        
-        let expr = self.parse_equality();
+    fn parse_assignment(&mut self) -> Result<ProgramExpression, String> {
+        let expr = self.parse_equality()?;
 
-        
-        if self.check(TokenType::Equal) 
-            || self.check(TokenType::PlusEq) 
+        if self.check(TokenType::Equal)
+            || self.check(TokenType::PlusEq)
             || self.check(TokenType::MinusEq)
             || self.check(TokenType::MultiplyEq)
             || self.check(TokenType::DivideEq)
             || self.check(TokenType::ModEq) {
-            let tok = self.advance(); 
-            
+            let tok = self.advance();
+
             let op = match &tok.t {
                 TokenType::Equal => SilkAssignment::Assignment,
                 TokenType::PlusEq => SilkAssignment::CompoundPlus,
@@ -231,28 +267,27 @@ impl Parser {
                 _ => unreachable!(),
             };
 
-            
-            let rhs = self.parse_assignment();
+            let rhs = self.parse_assignment()?;
 
-            return ExprNode::AssignmentOp(Box::new(expr), Box::new(rhs), op);
+            return Ok(ProgramExpression::new(ExprNode::AssignmentOp(expr, rhs, op), self.peek().line, self.peek().column));
         }
 
-        expr
+        Ok(expr)
     }
 
-    fn parse_equality(&mut self) -> ExprNode {
-        let mut expr = self.parse_boolean();
+    fn parse_equality(&mut self) -> Result<ProgramExpression, String> {
+        let mut expr = self.parse_boolean()?;
 
         while self.check(TokenType::DoubleEqual) {
             self.advance();
-            let rhs = self.parse_boolean();
-            expr = ExprNode::Op(Box::new(expr), Box::new(rhs), SilkOperator::Equality);
+            let rhs = self.parse_boolean()?;
+            expr = ProgramExpression::new(ExprNode::Op(expr, rhs, SilkOperator::Equality), self.peek().line, self.peek().column);
         }
-        expr
+        Ok(expr)
     }
 
-    fn parse_boolean(&mut self) -> ExprNode {
-        let mut expr = self.parse_comparison();
+    fn parse_boolean(&mut self) -> Result<ProgramExpression, String> {
+        let mut expr = self.parse_comparison()?;
 
         while self.check(TokenType::And) || self.check(TokenType::Or) {
             let tok = self.advance();
@@ -264,15 +299,15 @@ impl Parser {
                     unreachable!()
                 }
             };
-            let rhs = self.parse_comparison();
-            expr = ExprNode::Op(Box::new(expr), Box::new(rhs), op);
+            let rhs = self.parse_comparison()?;
+            expr = ProgramExpression::new(ExprNode::Op(expr, rhs, op), self.peek().line, self.peek().column);
         }
 
-        expr
+        Ok(expr)
     }
 
-    fn parse_comparison(&mut self) -> ExprNode {
-        let mut expr = self.parse_term();
+    fn parse_comparison(&mut self) -> Result<ProgramExpression, String> {
+        let mut expr = self.parse_term()?;
 
         while self.check(TokenType::GreaterThan) || self.check(TokenType::GreaterThanEq) || self.check(TokenType::LesserThan) || self.check(TokenType::LesserThanEq) {
             let tok = self.advance();
@@ -286,16 +321,16 @@ impl Parser {
                     unreachable!();
                 }
             };
-            let rhs = self.parse_term();
-            expr = ExprNode::Op(Box::new(expr), Box::new(rhs), op)
+            let rhs = self.parse_term()?;
+            expr = ProgramExpression::new(ExprNode::Op(expr, rhs, op), self.peek().line, self.peek().column)
         }
-        expr
+        Ok(expr)
 
     }
 
-    fn parse_term(&mut self) -> ExprNode {
-        let mut expr = self.parse_factor();
-        
+    fn parse_term(&mut self) -> Result<ProgramExpression, String> {
+        let mut expr = self.parse_factor()?;
+
         while self.check(TokenType::Plus) || self.check(TokenType::Minus) {
             let tok = self.advance();
             let op: SilkOperator = match &tok.t {
@@ -306,15 +341,15 @@ impl Parser {
                     unreachable!();
                 }
             };
-            let rhs = self.parse_factor();
-            expr = ExprNode::Op(Box::new(expr), Box::new(rhs), op)
+            let rhs = self.parse_factor()?;
+            expr = ProgramExpression::new(ExprNode::Op(expr, rhs, op), self.peek().line, self.peek().column)
         }
 
-        expr
+        Ok(expr)
     }
 
-    fn parse_factor(&mut self) -> ExprNode {
-        let mut expr = self.parse_unary();
+    fn parse_factor(&mut self) -> Result<ProgramExpression, String> {
+        let mut expr = self.parse_unary()?;
 
         while self.check(TokenType::Asterisk) || self.check(TokenType::FrontSlash) || self.check(TokenType::Percent) {
             let tok = self.advance();
@@ -327,56 +362,57 @@ impl Parser {
                     unreachable!();
                 }
             };
-            let rhs = self.parse_postfix();
-            expr = ExprNode::Op(Box::new(expr), Box::new(rhs), op)
+            let rhs = self.parse_postfix()?;
+            expr = ProgramExpression::new(ExprNode::Op(expr, rhs, op), self.peek().line, self.peek().column)
         }
 
-        expr
+        Ok(expr)
     }
 
-    fn parse_unary(&mut self) -> ExprNode {
-        
+    fn parse_unary(&mut self) -> Result<ProgramExpression, String> {
         if self.check(TokenType::Minus) {
-            self.advance(); 
-            
-            
-            let rhs = self.parse_unary(); 
-            return ExprNode::Unary(Box::new(rhs));
+            self.advance();
+            let result = self.parse_unary()?;
+            Ok(ProgramExpression::new(Unary(result), self.peek().line, self.peek().column))
+        } else {
+            self.parse_postfix()
         }
-        
-        
-        self.parse_postfix()
     }
 
-    fn parse_postfix(&mut self) -> ExprNode {
-        let mut expr = self.parse_primary();
+    fn parse_postfix(&mut self) -> Result<ProgramExpression, String> {
+        let mut expr = self.parse_primary()?;
 
         loop {
             if self.check(TokenType::OpenParen) {
-                self.advance(); 
-                expr = self.finish_call(expr);
+                self.advance();
+                expr = self.finish_call(expr)?;
             } else if self.check(TokenType::OpenBracket) {
-                self.advance(); 
-                let index = self.parse_expression();
+                self.advance();
+                let index = self.parse_expression()?;
                 self.expect(TokenType::CloseBracket);
-                expr = ExprNode::IndexAccess(Box::new(expr), Box::new(index));
+                expr = ProgramExpression::new(ExprNode::IndexAccess(expr, index), self.peek().line, self.peek().column);
             } else if self.check(TokenType::Period) {
-                self.advance(); 
-                
+                self.advance();
+
                 let name = self.extract_id();
-                expr = ExprNode::DotAccess(Box::new(expr), Box::new(ExprNode::Var(name)));
+                let rhs = ProgramExpression::new(ExprNode::Var(name), self.peek().line, self.peek().column);
+                expr = ProgramExpression::new(ExprNode::DotAccess(expr, rhs), self.peek().line, self.peek().column);
             } else {
                 break;
             }
         }
-        expr
+        Ok(expr)
     }
 
-    fn finish_call(&mut self, callee: ExprNode) -> ExprNode {
+    fn finish_call(&mut self, callee: ProgramExpression) -> Result<ProgramExpression, String> {
         let mut arguments = Vec::new();
         if !self.check(TokenType::CloseParen) {
             loop {
-                arguments.push(self.parse_expression());
+                let res = self.parse_expression();
+                match res {
+                    Ok(expr) => arguments.push(expr),
+                    Err(what) => {return Err(what);}
+                }
                 if self.check(TokenType::Comma) {
                     self.advance();
                 } else {
@@ -385,10 +421,10 @@ impl Parser {
             }
         }
         self.expect(TokenType::CloseParen);
-        ExprNode::FuncCall(Box::new(callee), arguments)
+        Ok(ProgramExpression::new(ExprNode::FuncCall(callee, arguments), self.peek().line, self.peek().column))
     }
 
-    fn parse_primary(&mut self) -> ExprNode {
+    fn parse_primary(&mut self) -> Result<ProgramExpression, String> {
             if self.check(TokenType::OpenParen) {
             self.advance(); 
             let expr = self.parse_expression();
@@ -397,18 +433,22 @@ impl Parser {
         }
         let tok = self.advance();
         match &tok.t {
-            TokenType::Identifier(id) => ExprNode::Var(id.clone()),
-            TokenType::IntLit(num) => ExprNode::IntLiteral(num.clone()),
-            TokenType::FloatLit(num) => ExprNode::FloatLiteral(num.clone()),
-            TokenType::StringLit(str) => ExprNode::StringLiteral(str.clone()),
-            TokenType::Null => ExprNode::NullLiteral,
-            TokenType::BoolLit(option) => ExprNode::BoolLiteral(option.clone()),
+            TokenType::Identifier(id) => Ok(ProgramExpression::new(ExprNode::Var(id.clone()), self.peek().line, self.peek().column)),
+            TokenType::IntLit(num) => Ok(ProgramExpression::new(ExprNode::IntLiteral(num.clone()), self.peek().line, self.peek().column)),
+            TokenType::FloatLit(num) => Ok(ProgramExpression::new(ExprNode::FloatLiteral(num.clone()), self.peek().line, self.peek().column)),
+            TokenType::StringLit(str) => Ok(ProgramExpression::new(ExprNode::StringLiteral(str.clone()), self.peek().line, self.peek().column)),
+            TokenType::Null => Ok(ProgramExpression::new(ExprNode::NullLiteral, self.peek().line, self.peek().column)),
+            TokenType::BoolLit(option) => Ok(ProgramExpression::new(ExprNode::BoolLiteral(option.clone()), self.peek().line, self.peek().column)),
             TokenType::OpenBracket => {
-                let mut array: Vec<ExprNode> = Vec::new();
+                let mut array: Vec<ProgramExpression> = Vec::new();
 
                 if !self.check(TokenType::CloseBracket) {
                     loop {
-                        array.push(self.parse_expression());
+                        let res = self.parse_expression();
+                        match res {
+                            Ok(expr) => array.push(expr),
+                            Err(what) => {return Err(what);}
+                        }
                         if self.check(TokenType::Comma) {
                             self.advance();
                         } else {
@@ -417,11 +457,10 @@ impl Parser {
                     }
                 }
                 self.advance();
-                ExprNode::ArrayLiteral(array)
+                Ok(ProgramExpression::new(ExprNode::ArrayLiteral(array), self.peek().line, self.peek().column))
             },
             _ => {
-                self.err("Unexpected Token");
-                unreachable!();
+                Err(format!("Unexpected token in expression '{}'", tok))
             }
         }
     }
