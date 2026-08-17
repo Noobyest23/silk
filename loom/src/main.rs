@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
+use silk::version;
 
 #[derive(Parser)]
 #[command(author, version, about = "Loom CLI for Silk", long_about = None)]
@@ -33,6 +34,9 @@ enum Commands {
         module_name: String,
     },
     Session {
+
+    },
+    Version {
 
     },
     #[command(subcommand)]
@@ -90,6 +94,11 @@ fn main() {
                 GlobalCommands::Call { expr } => {
                     execute_global_call(expr);
                 }
+            }
+        }
+        Commands::Version {  } => {
+            unsafe {
+                println!("{}", version())
             }
         }
     }

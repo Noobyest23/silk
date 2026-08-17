@@ -12,10 +12,9 @@ fn get_double(val: &SilkValue) -> Option<f64> {
     }
 }
 
-pub fn silk_math_abs(_vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
+pub fn silk_math_abs(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'abs' expects exactly 1 argument");
-        return SilkValue::Null;
+        vm.error(String::from("'abs' expected exactly 1 argument"));
     }
 
     match &args[0] {

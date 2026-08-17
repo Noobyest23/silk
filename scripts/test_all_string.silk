@@ -1,7 +1,6 @@
 import "io"
 
-# Test basic string functions
-print("=== Basic String Functions ===")
+
 print("".len())
 var msg = "Hello World!"
 print(msg.upper())
@@ -11,9 +10,6 @@ print("        trimmed".trim())
 print("gwyudhellouihdn".substring(5, 11))
 print(msg.contains("World"))
 print("hello".replace("l", "L"))
-
-# Test new string functions
-print("=== New String Functions ===")
 print("hello".reverse())
 print("hello".starts_with("he"))
 print("hello".starts_with("wo"))

@@ -1,6 +1,6 @@
 
 use core::panic;
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, os::linux::raw::stat, process::exit};
 use crate::{
     environment::scope::Scope,
     parser::ast::{
@@ -45,6 +45,7 @@ pub struct VirtualMachine {
     
     o_ptr: usize,
 
+    trace_stack: Vec<(SilkValue, u32, u32)>
 }
 
 impl VirtualMachine {
@@ -60,7 +61,17 @@ impl VirtualMachine {
             scope: Scope::new(),
             modules: HashMap::new(),
             o_ptr: 0,
+            trace_stack: Vec::new()
         }
+    }
+
+    pub fn error(&self, msg: String) {
+        println!("{}: {}", "[Runtime Error]".red(), msg);
+        println!("    Stack Trace: ");
+        for call in &self.trace_stack {
+            println!("        -{}, line: {}, column: {}", call.0, call.1, call.2)
+        }
+        exit(-1);
     }
 
     pub fn stringify_value(&self, value: &SilkValue) -> String {
@@ -237,7 +248,7 @@ impl VirtualMachine {
         for stmt in program.statements {
             let err_code = self.evaluate_statement(&stmt);
             if let Some(error_msg) = err_code {
-                println!("{}: {}.", "[Silk Runtime Error]".red(), error_msg.yellow());
+                self.error(error_msg);
                 return 1;
             }
         }
@@ -339,7 +350,7 @@ impl VirtualMachine {
             },
             StmtNode::Import(module_name, _) => {
                 if module_name.ends_with(".silk") {
-                    
+                    self.trace_stack.push((SilkValue::String("import ".to_owned() + module_name), statement.line, statement.column));
                     match std::fs::read_to_string(module_name) {
                         Ok(src) => {
                             let mut lexer = Lexer::new(&src);
@@ -353,6 +364,7 @@ impl VirtualMachine {
                             if exit_code != SILK_EXIT_OK {
                                 return Some(format!("Error occurred while importing silk file '{}'.", module_name));
                             }
+                            self.trace_stack.pop();
                             Option::None
                         }
                         Err(e) => Some(format!("Could not read silk file '{}': {}", module_name, e))
@@ -488,7 +500,7 @@ impl VirtualMachine {
             }
             StmtNode::Import(module_name, _) => {
                 if module_name.ends_with(".silk") {
-                    
+                    self.trace_stack.push((SilkValue::String("import ".to_owned() + module_name), statement.line, statement.column));
                     match std::fs::read_to_string(module_name) {
                         Ok(src) => {
                             let mut lexer = Lexer::new(&src);
@@ -499,6 +511,7 @@ impl VirtualMachine {
                             };
 
                             self.execute(program, true);
+                            self.trace_stack.pop();
                             Option::None
                         }
                         Err(e) => Some(format!("Could not read silk file '{}': {}", module_name, e))
@@ -754,6 +767,14 @@ impl VirtualMachine {
     }
 
     pub fn expr_call(&mut self, function: &ProgramExpression, args: &Vec<ProgramExpression>) -> Result<SilkValue, String> {
+        let args_str = args
+            .iter()
+            .map(|arg| arg.node.as_ref().to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        let func_decompile = format!("{}({})", function.node.as_ref(), args_str);
+        self.trace_stack.push((SilkValue::String(func_decompile), function.line, function.column));
         self.o_ptr = 0;
         let v_ptr = self.evaluate_expression(function)?;
         
@@ -812,11 +833,13 @@ impl VirtualMachine {
                     self.stack_pop();
                 }
                 self.scope = self.scope.pop();
-
+                self.trace_stack.pop();
                 Ok(return_val)
             }
             SilkValue::NativeFn(native, _) => {
-                Ok(native(self, &v_args))
+                let ret_val = Ok(native(self, &v_args));
+                self.trace_stack.pop();
+                ret_val
             }
             SilkValue::ObjectDefinition(def) => {
                 self.scope = self.scope.child();
@@ -853,6 +876,7 @@ impl VirtualMachine {
                 self.scope = self.scope.pop();
                 let handle = self.heap_allocate(SilkValue::Object(struct_map.clone()));
                 if let SilkHandle::HeapAllocated(ptr) = handle {
+                    self.trace_stack.pop();
                     return Ok(SilkValue::Pointer(ptr));
                 }
                 else {

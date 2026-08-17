@@ -1,7 +1,5 @@
 import "io"
 
-# Test basic list functions
-print("=== Basic List Functions ===")
 var list = ["hello", "world"]
 print(list.len())
 print(list.contains("hello"))
@@ -12,9 +10,6 @@ var sliced = list.slice(0, 1)
 print(sliced.len())
 var with_item = list.push("!")  
 print(with_item.len())
-
-# Test new list functions
-print("=== New List Functions ===")
 var nums = [1, 2, 3, 4, 5]
 print(nums.len())
 var popped = nums.pop()

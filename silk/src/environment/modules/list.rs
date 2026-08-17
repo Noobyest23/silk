@@ -6,8 +6,7 @@ use super::super::value::SilkValue;
 
 pub fn silk_list_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'len' expects exactly 1 argument");
-        return SilkValue::Null;
+        vm.error(String::from("'len' expects exactly 1 argument"));
     }
 
     let list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -18,8 +17,7 @@ pub fn silk_list_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
 
 pub fn silk_list_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'contains' expects exactly 2 arguments");
-        return SilkValue::Null;
+        vm.error(String::from("'contains' expects exactly 2 argument"));
     }
 
     let list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -51,8 +49,7 @@ pub fn silk_list_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
 
 pub fn silk_list_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'index_of' expects exactly 2 arguments");
-        return SilkValue::Null;
+        vm.error(String::from("'index_of' expects exactly 2 argument"));
     }
 
     let list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -84,20 +81,19 @@ pub fn silk_list_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
 
 pub fn silk_list_slice(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 3 {
-        eprintln!("[Silk Error] 'slice' expects exactly 3 arguments");
-        return SilkValue::Null;
+        vm.error(String::from("'slice' expects exactly 3 argument"));
     }
 
     let list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
 
     let SilkValue::Int(start) = args[1] else {
-        eprintln!("[Silk Error] 'slice' argument 2 must be an integer (start index)");
-        return SilkValue::Null;
+        vm.error(String::from("'slice' argument 2 must be an integer (start index)"));
+        unreachable!();
     };
 
     let SilkValue::Int(end) = args[2] else {
-        eprintln!("[Silk Error] 'slice' argument 3 must be an integer (end index)");
-        return SilkValue::Null;
+        vm.error(String::from("'slice' argument 3 must be an integer (end index)"));
+        unreachable!();
     };
 
     let start_idx = (start.max(0) as usize).min(list.len());
@@ -119,8 +115,7 @@ pub fn silk_list_slice(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
 
 pub fn silk_list_push(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'push' expects exactly 2 arguments");
-        return SilkValue::Null;
+        vm.error(String::from("'push' expects exactly 2 arguments"));
     }
 
     let mut list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -137,8 +132,7 @@ pub fn silk_list_push(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
 
 pub fn silk_list_pop(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'pop' expects exactly 1 argument");
-        return SilkValue::Null;
+        vm.error(String::from("'pop' expects exactly 1 argument"));
     }
 
     let mut list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -157,8 +151,7 @@ pub fn silk_list_pop(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
 
 pub fn silk_list_first(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'first' expects exactly 1 argument");
-        return SilkValue::Null;
+        vm.error(String::from("'first' expects exactly 1 argument"));
     }
 
     let list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -173,8 +166,7 @@ pub fn silk_list_first(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
 
 pub fn silk_list_last(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'last' expects exactly 1 argument");
-        return SilkValue::Null;
+        vm.error(String::from("'last' expects exactly 1 argument"));
     }
 
     let list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -189,8 +181,7 @@ pub fn silk_list_last(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
 
 pub fn silk_list_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'reverse' expects exactly 1 argument");
-        return SilkValue::Null;
+        vm.error(String::from("'reverse' expects exactly 1 argument"));
     }
 
     let mut list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -207,8 +198,7 @@ pub fn silk_list_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
 
 pub fn silk_list_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'count' expects exactly 2 arguments");
-        return SilkValue::Null;
+        vm.error(String::from("'count' expects exactly 2 arguments"));
     }
 
     let list = vm.heap_get_list(args[0].clone()).unwrap_or_default();
@@ -238,15 +228,15 @@ pub fn silk_list_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
 
 pub fn build_list_map() -> HashMap<String, SilkValue> {
     let mut map = HashMap::new();
-    map.insert("len".to_string(), SilkValue::NativeFn(silk_list_len, String::from("Len(list: List) -> Int; Returns the length of a list")));
-    map.insert("contains".to_string(), SilkValue::NativeFn(silk_list_contains, String::from("Contains(list: List, item: Any) -> Boolean; Checks if a list contains an item")));
-    map.insert("index_of".to_string(), SilkValue::NativeFn(silk_list_index_of, String::from("IndexOf(list: List, item: Any) -> Int; Returns the index of an item in a list")));
-    map.insert("slice".to_string(), SilkValue::NativeFn(silk_list_slice, String::from("Slice(list: List, start: Int, end: Int) -> List; Returns a slice of a list")));
-    map.insert("push".to_string(), SilkValue::NativeFn(silk_list_push, String::from("Push(list: List, item: Any) -> Null; Adds an item to the end of a list")));
-    map.insert("pop".to_string(), SilkValue::NativeFn(silk_list_pop, String::from("Pop(list: List) -> Any; Removes and returns the last item from a list")));
-    map.insert("first".to_string(), SilkValue::NativeFn(silk_list_first, String::from("First(list: List) -> Any; Returns the first item from a list")));
-    map.insert("last".to_string(), SilkValue::NativeFn(silk_list_last, String::from("Last(list: List) -> Any; Returns the last item from a list")));
-    map.insert("reverse".to_string(), SilkValue::NativeFn(silk_list_reverse, String::from("Reverse(list: List) -> Null; Reverses a list")));
-    map.insert("count".to_string(), SilkValue::NativeFn(silk_list_count, String::from("Count(list: List, item: Any) -> Int; Counts the occurrences of an item in a list")));
+    map.insert("len".to_string(), SilkValue::NativeFn(silk_list_len, String::from("len(list: List) -> Int; Returns the length of a list")));
+    map.insert("contains".to_string(), SilkValue::NativeFn(silk_list_contains, String::from("contains(list: List, item: Any) -> Boolean; Checks if a list contains an item")));
+    map.insert("index_of".to_string(), SilkValue::NativeFn(silk_list_index_of, String::from("index_of(list: List, item: Any) -> Int; Returns the index of an item in a list")));
+    map.insert("slice".to_string(), SilkValue::NativeFn(silk_list_slice, String::from("slice(list: List, start: Int, end: Int) -> List; Returns a slice of a list")));
+    map.insert("push".to_string(), SilkValue::NativeFn(silk_list_push, String::from("push(list: List, item: Any) -> Null; Adds an item to the end of a list")));
+    map.insert("pop".to_string(), SilkValue::NativeFn(silk_list_pop, String::from("pop(list: List) -> Any; Removes and returns the last item from a list")));
+    map.insert("first".to_string(), SilkValue::NativeFn(silk_list_first, String::from("first(list: List) -> Any; Returns the first item from a list")));
+    map.insert("last".to_string(), SilkValue::NativeFn(silk_list_last, String::from("last(list: List) -> Any; Returns the last item from a list")));
+    map.insert("reverse".to_string(), SilkValue::NativeFn(silk_list_reverse, String::from("reverse(list: List) -> Null; Reverses a list")));
+    map.insert("count".to_string(), SilkValue::NativeFn(silk_list_count, String::from("count(list: List, item: Any) -> Int; Counts the occurrences of an item in a list")));
     map
 }

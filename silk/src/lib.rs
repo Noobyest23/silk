@@ -311,3 +311,8 @@ pub unsafe extern "C" fn get_global_bool(id: *const c_char) -> c_int {
     }
     0
 }
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn version() -> c_float {
+    return 0.1;
+}

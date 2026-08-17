@@ -6,7 +6,6 @@ use crate::environment::vm::{VirtualMachine};
 use crate::parser::ast::{ProgramStatement, stmt::StmtNode};
 
 pub type NativeFn = fn (vm: &mut VirtualMachine, &Vec<SilkValue>) -> SilkValue;
-pub type CFn = *const c_void;
 
 #[derive(Clone, Debug)]
 pub enum SilkValue {
@@ -19,7 +18,6 @@ pub enum SilkValue {
     List(Vec<SilkValue>),
     Function(Vec<String>, Vec<ProgramStatement>),
     NativeFn(NativeFn, String),
-    CFn(CFn, String),
     Pointer(usize),
     ObjectDefinition(Vec<ProgramStatement>),
 }
@@ -62,9 +60,6 @@ impl fmt::Display for SilkValue {
             SilkValue::NativeFn(_, desc) => {
                 write!(f, "(Native Function: {})", desc)
             },
-            SilkValue::CFn(_, desc) => {
-                write!(f, "(C Function: {})", desc)
-            }
             SilkValue::Pointer(ptr) => {
                 write!(f, "ptr({})", ptr)
             },
@@ -90,7 +85,6 @@ impl SilkValue {
             SilkValue::List(l) => !l.is_empty(),
             SilkValue::Function(_, _) => true,
             SilkValue::NativeFn(_, _) => true,
-            SilkValue::CFn(_, _) => true,
             SilkValue::Object(_) => true,
             SilkValue::Pointer(ptr) => *ptr == 0 as usize,
             SilkValue::ObjectDefinition(_) => false,
