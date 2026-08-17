@@ -2,30 +2,24 @@ use std::collections::HashMap;
 use crate::environment::vm::{SilkHandle, VirtualMachine};
 use super::super::value::SilkValue;
 
-
-
 pub fn silk_string_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'len' expects exactly 1 argument");
+        vm.error(String::from("'len' expects exactly 1 argument"));
         return SilkValue::Null;
     }
 
     let s = vm.heap_get_string(args[0].clone()).unwrap_or_default();
 
-    
     SilkValue::Int(s.len() as i32)
 }
 
-
-
 pub fn silk_string_concat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'concat' expects exactly 2 arguments");
+        vm.error(String::from("'concat' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
     let s1 = vm.heap_get_string(args[0].clone()).unwrap_or_default();
-
     let s2 = vm.heap_get_string(args[1].clone()).unwrap_or_default();
 
     let new_string = format!("{}{}", s1, s2);
@@ -36,11 +30,9 @@ pub fn silk_string_concat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     }
 }
 
-
-
 pub fn silk_string_upper(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'upper' expects exactly 1 argument");
+        vm.error(String::from("'upper' expects exactly 1 argument"));
         return SilkValue::Null;
     }
 
@@ -54,11 +46,9 @@ pub fn silk_string_upper(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     }
 }
 
-
-
 pub fn silk_string_lower(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'lower' expects exactly 1 argument");
+        vm.error(String::from("'lower' expects exactly 1 argument"));
         return SilkValue::Null;
     }
 
@@ -72,37 +62,32 @@ pub fn silk_string_lower(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     }
 }
 
-
-
 pub fn silk_string_substring(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 3 {
-        eprintln!("[Silk Error] 'substring' expects exactly 3 arguments");
+        vm.error(String::from("'substring' expects exactly 3 arguments"));
         return SilkValue::Null;
     }
 
     let s = vm.heap_get_string(args[0].clone()).unwrap_or_default();
 
     let SilkValue::Int(start) = args[1] else {
-        eprintln!("[Silk Error] 'substring' argument 2 must be an integer (start index)");
+        vm.error(String::from("'substring' argument 2 must be an integer (start index)"));
         return SilkValue::Null;
     };
 
     let SilkValue::Int(end) = args[2] else {
-        eprintln!("[Silk Error] 'substring' argument 3 must be an integer (end index)");
+        vm.error(String::from("'substring' argument 3 must be an integer (end index)"));
         return SilkValue::Null;
     };
 
-    
     let start_idx = (start.max(0) as usize).min(s.len());
     let end_idx = (end.max(0) as usize).min(s.len());
 
     if start_idx > end_idx {
-        eprintln!("[Silk Error] 'substring' start index cannot be greater than end index");
+        vm.error(String::from("'substring' start index cannot be greater than end index"));
         return SilkValue::Null;
     }
 
-    
-    
     let sub_str: String = s.chars().skip(start_idx).take(end_idx - start_idx).collect();
 
     let handle = vm.heap_allocate(SilkValue::String(sub_str));
@@ -112,11 +97,9 @@ pub fn silk_string_substring(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> 
     }
 }
 
-
-
 pub fn silk_string_trim(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'trim' expects exactly 1 argument");
+        vm.error(String::from("'trim' expects exactly 1 argument"));
         return SilkValue::Null;
     }
 
@@ -130,33 +113,26 @@ pub fn silk_string_trim(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
     }
 }
 
-
-
 pub fn silk_string_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'contains' expects exactly 2 arguments");
+        vm.error(String::from("'contains' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
     let haystack = vm.heap_get_string(args[0].clone()).unwrap_or_default();
-
     let needle = vm.heap_get_string(args[1].clone()).unwrap_or_default();
 
     SilkValue::Bool(haystack.contains(&needle))
 }
 
-
-
 pub fn silk_string_replace(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 3 {
-        eprintln!("[Silk Error] 'replace' expects exactly 3 arguments");
+        vm.error(String::from("'replace' expects exactly 3 arguments"));
         return SilkValue::Null;
     }
 
     let s = vm.heap_get_string(args[0].clone()).unwrap_or_default();
-
     let from_str = vm.heap_get_string(args[1].clone()).unwrap_or_default();
-
     let to_str = vm.heap_get_string(args[2].clone()).unwrap_or_default();
 
     let replaced = s.replace(&from_str, &to_str);
@@ -167,11 +143,9 @@ pub fn silk_string_replace(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     }
 }
 
-
-
 pub fn silk_string_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
-        eprintln!("[Silk Error] 'reverse' expects exactly 1 argument");
+        vm.error(String::from("'reverse' expects exactly 1 argument"));
         return SilkValue::Null;
     }
 
@@ -184,11 +158,9 @@ pub fn silk_string_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     }
 }
 
-
-
 pub fn silk_string_starts_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'starts_with' expects exactly 2 arguments");
+        vm.error(String::from("'starts_with' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
@@ -198,11 +170,9 @@ pub fn silk_string_starts_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -
     SilkValue::Bool(s.starts_with(&prefix))
 }
 
-
-
 pub fn silk_string_ends_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'ends_with' expects exactly 2 arguments");
+        vm.error(String::from("'ends_with' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
@@ -212,12 +182,9 @@ pub fn silk_string_ends_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> 
     SilkValue::Bool(s.ends_with(&suffix))
 }
 
-
-
-
 pub fn silk_string_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'index_of' expects exactly 2 arguments");
+        vm.error(String::from("'index_of' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
@@ -230,23 +197,21 @@ pub fn silk_string_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> S
     }
 }
 
-
-
 pub fn silk_string_repeat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'repeat' expects exactly 2 arguments");
+        vm.error(String::from("'repeat' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
     let s = vm.heap_get_string(args[0].clone()).unwrap_or_default();
 
     let SilkValue::Int(count) = args[1] else {
-        eprintln!("[Silk Error] 'repeat' argument 2 must be an integer (repetition count)");
+        vm.error(String::from("'repeat' argument 2 must be an integer (repetition count)"));
         return SilkValue::Null;
     };
 
     if count < 0 {
-        eprintln!("[Silk Error] 'repeat' count cannot be negative");
+        vm.error(String::from("'repeat' count cannot be negative"));
         return SilkValue::Null;
     }
 
@@ -258,24 +223,21 @@ pub fn silk_string_repeat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     }
 }
 
-
-
-
 pub fn silk_string_char_at(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'char_at' expects exactly 2 arguments");
+        vm.error(String::from("'char_at' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
     let s = vm.heap_get_string(args[0].clone()).unwrap_or_default();
 
     let SilkValue::Int(idx) = args[1] else {
-        eprintln!("[Silk Error] 'char_at' argument 2 must be an integer (index)");
+        vm.error(String::from("'char_at' argument 2 must be an integer (index)"));
         return SilkValue::Null;
     };
 
     if idx < 0 {
-        eprintln!("[Silk Error] 'char_at' index cannot be negative");
+        vm.error(String::from("'char_at' index cannot be negative"));
         return SilkValue::Null;
     }
 
@@ -292,11 +254,9 @@ pub fn silk_string_char_at(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     }
 }
 
-
-
 pub fn silk_string_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
-        eprintln!("[Silk Error] 'count' expects exactly 2 arguments");
+        vm.error(String::from("'count' expects exactly 2 arguments"));
         return SilkValue::Null;
     }
 
@@ -311,7 +271,6 @@ pub fn silk_string_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     SilkValue::Int(count as i32)
 }
 
-
 pub fn build_string_map() -> HashMap<String, SilkValue> {
     let mut map = HashMap::new();
     
@@ -323,7 +282,6 @@ pub fn build_string_map() -> HashMap<String, SilkValue> {
     map.insert("trim".to_string(), SilkValue::NativeFn(silk_string_trim, String::from("Trim(s: String) -> String; Removes whitespace from the beginning and end of a string")));
     map.insert("contains".to_string(), SilkValue::NativeFn(silk_string_contains, String::from("Contains(s: String, needle: String) -> Boolean; Checks if a string contains a substring")));
     map.insert("replace".to_string(), SilkValue::NativeFn(silk_string_replace, String::from("Replace(s: String, old: String, new: String) -> String; Replaces occurrences of a substring with another substring")));
-    
     
     map.insert("reverse".to_string(), SilkValue::NativeFn(silk_string_reverse, String::from("Reverse(s: String) -> String; Returns a reversed version of a string")));
     map.insert("starts_with".to_string(), SilkValue::NativeFn(silk_string_starts_with, String::from("StartsWith(s: String, prefix: String) -> Boolean; Checks if a string starts with a prefix")));

@@ -28,7 +28,7 @@
             },
             "args": [
                 "run",
-                "scripts/test_all_string.silk",
+                "scripts/induce_panic.silk",
             ]
         },
         {

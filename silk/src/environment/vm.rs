@@ -428,7 +428,9 @@ impl VirtualMachine {
                 if value.is_truthy() {
                     self.scope = self.scope.child();
                     for stmt in truthy {
-                        self.evaluate_statement(stmt);
+                        if let Some(error) = self.evaluate_statement(stmt) {
+                            return Some(error)
+                        }
                     }
                     let variables_declared = self.scope.variables.len();
                     for _ in 0..variables_declared {
@@ -439,7 +441,9 @@ impl VirtualMachine {
                 else {
                     self.scope = self.scope.child();
                     for stmt in falsey {
-                        self.evaluate_statement(stmt);
+                        if let Some(error) = self.evaluate_statement(stmt) {
+                            return Some(error)
+                        }
                     }
                     let variables_declared = self.scope.variables.len();
                     for _ in 0..variables_declared {
@@ -825,7 +829,9 @@ impl VirtualMachine {
 
                 let return_val = SilkValue::Null;
                 for stmt in body {
-                    self.evaluate_statement(&stmt);
+                    if let Some(error) = self.evaluate_statement(&stmt) {
+                        return Err(error)
+                    }
                 }
 
                 let stack_var_count = self.scope.variables.values().filter(|handle| matches!(handle, SilkHandle::StackAllocated(_))).count();
@@ -845,7 +851,9 @@ impl VirtualMachine {
                 self.scope = self.scope.child();
 
                 for stmt in &def {
-                    self.evaluate_statement(stmt);
+                    if let Some(error) = self.evaluate_statement(stmt) {
+                            return Err(error)
+                        }
                 }
 
                 if let ExprNode::Var(id) = function.node.as_ref() {
