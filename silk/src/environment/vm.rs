@@ -335,9 +335,16 @@ impl VirtualMachine {
         }
     }
 
-    pub fn evaluate_statement(&mut self, statement: &ProgramStatement) -> Option<String> {
+    fn attach_location(&self, err: String, line: u32, column: u32) -> String {
+        if err.contains("(line:") {
+            err
+        } else {
+            format!("{} (line: {}, column: {})", err, line, column)
+        }
+    }
 
-        match statement.node.as_ref() {
+    pub fn evaluate_statement(&mut self, statement: &ProgramStatement) -> Option<String> {
+        let res = match statement.node.as_ref() {
             StmtNode::VarDecl(id, initializer) => self.stmt_var_decl(id, initializer),
             StmtNode::FuncDecl(id, args, body) => self.stmt_func_decl(id, args, body),
             StmtNode::If(conditional, truthy, falsey) => self.stmt_if(conditional, truthy, falsey),
@@ -357,12 +364,12 @@ impl VirtualMachine {
                             let tokens = lexer.tokenize();
                             let mut parser = Parser::new(tokens);
                             let Some(program) = parser.parse() else {
-                                return Some(format!("Failed to parse module '{}'", module_name));
+                                return Some(format!("Failed to parse module '{}' (line: {}, column: {})", module_name, statement.line, statement.column));
                             };
 
                             let exit_code = self.execute(program, true);
                             if exit_code != SILK_EXIT_OK {
-                                return Some(format!("Error occurred while importing silk file '{}'.", module_name));
+                                return Some(format!("Error occurred while importing silk file '{}' (line: {}, column: {})", module_name, statement.line, statement.column));
                             }
                             self.trace_stack.pop();
                             Option::None
@@ -387,7 +394,13 @@ impl VirtualMachine {
             StmtNode::Global(stmt) => self.evaluate_global_statement(stmt),
             StmtNode::StructDecl(id, data) => self.stmt_struct_decl(id, data),
             _ => {Some(format!("Statement evaluation for {:?} has not been implemented", statement.node))}
+        };
+
+        if let Some(err) = res {
+            return Some(self.attach_location(err, statement.line, statement.column));
         }
+
+        None
     }
 
     pub fn stmt_var_decl(&mut self, identifier: &String, initializer: &ProgramExpression) -> Option<String> {
@@ -552,39 +565,7 @@ impl VirtualMachine {
         None
     }
 
-    pub fn evaluate_expression(&mut self, expression: &ProgramExpression) -> Result<SilkValue, String> {
-        
-        match expression.node.as_ref() {
-            ExprNode::IntLiteral(num) => Ok(SilkValue::Int(*num)),
-            ExprNode::FloatLiteral(num) => Ok(SilkValue::Float(*num)),
-            ExprNode::BoolLiteral(truthy) => Ok(SilkValue::Bool(*truthy)),
-            ExprNode::NullLiteral => Ok(SilkValue::Null),
-            ExprNode::ArrayLiteral(arr) => self.expr_array_lit(arr),
-            ExprNode::StringLiteral(str) => self.expr_str_lit(str),
-            ExprNode::Var(id) => self.expr_var(id),
-            ExprNode::IndexAccess(container, idx) => self.expr_index_access(container, idx),
-            ExprNode::Op(lhs, rhs, op) => self.expr_op(lhs, rhs, op),
-            ExprNode::AssignmentOp(lhs, rhs, op) => self.expr_assignment_op(lhs, rhs, op),
-            ExprNode::FuncCall(func, args) => self.expr_call(func, args),
-            ExprNode::Unary(expr) => {
-                let result = self.evaluate_expression(expr);
-                match result {
-                    Ok(v) => {
-                        match v {
-                            SilkValue::Bool(b) => Ok(SilkValue::Bool(!b)),
-                            SilkValue::Float(num) => Ok(SilkValue::Float(-num)),
-                            SilkValue::Int(num) => Ok(SilkValue::Int(-num)),
-                            _ => Err(format!("Unary operation is unavailble for expression {}", expr.node.as_ref())),
-                        }
-                    }
-                    Err(e) => Err(e)
-                }
-            }
-            ExprNode::DotAccess(c, accessee) => self.expr_dot(c, accessee),
-            _ => {Err(format!("Expression evaluation for {} has not been implemented", expression.node.as_ref()))}
-        }
-    }
-
+    
     pub fn expr_array_lit(&mut self, arr: &Vec<ProgramExpression>) -> Result<SilkValue, String> {
         let mut v_arr: Vec<SilkValue> = vec![SilkValue::Null; arr.len()];
         for idx in 0..arr.len() {
@@ -965,6 +946,38 @@ impl VirtualMachine {
         }
     }
 
+    pub fn evaluate_expression(&mut self, expression: &ProgramExpression) -> Result<SilkValue, String> {
+        match expression.node.as_ref() {
+            ExprNode::IntLiteral(num) => Ok(SilkValue::Int(*num)),
+            ExprNode::FloatLiteral(num) => Ok(SilkValue::Float(*num)),
+            ExprNode::BoolLiteral(truthy) => Ok(SilkValue::Bool(*truthy)),
+            ExprNode::NullLiteral => Ok(SilkValue::Null),
+            ExprNode::ArrayLiteral(arr) => self.expr_array_lit(arr).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            ExprNode::StringLiteral(str) => self.expr_str_lit(str).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            ExprNode::Var(id) => self.expr_var(id).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            ExprNode::IndexAccess(container, idx) => self.expr_index_access(container, idx).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            ExprNode::Op(lhs, rhs, op) => self.expr_op(lhs, rhs, op).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            ExprNode::AssignmentOp(lhs, rhs, op) => self.expr_assignment_op(lhs, rhs, op).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            ExprNode::FuncCall(func, args) => self.expr_call(func, args).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            ExprNode::Unary(expr) => {
+                let result = self.evaluate_expression(expr);
+                match result {
+                    Ok(v) => match v {
+                        SilkValue::Bool(b) => Ok(SilkValue::Bool(!b)),
+                        SilkValue::Float(num) => Ok(SilkValue::Float(-num)),
+                        SilkValue::Int(num) => Ok(SilkValue::Int(-num)),
+                        _ => Err(self.attach_location(format!("Unary operation is unavailble for expression {}", expr.node.as_ref()), expression.line, expression.column)),
+                    },
+                    Err(e) => Err(self.attach_location(e, expression.line, expression.column)),
+                }
+            }
+            ExprNode::DotAccess(c, accessee) => self.expr_dot(c, accessee).map_err(|e| self.attach_location(e, expression.line, expression.column)),
+            _ => Err(self.attach_location(format!("Expression evaluation for {} has not been implemented", expression.node.as_ref()), expression.line, expression.column)),
+        }
+    }
+
+
+    
     pub fn evaluate_expression_as_mut(&mut self, expression: &ProgramExpression) -> Result<SilkHandle, String> {
         match expression.node.as_ref() {
             ExprNode::Var(id) => self.expr_var_as_mut(id),
@@ -998,7 +1011,6 @@ impl VirtualMachine {
                 match self.heap.get(&ptr) {
                     Some(SilkValue::List(v_array)) => {
                         if (v_int as usize) < v_array.len() {
-                            
                             Ok(SilkHandle::HeapElement(ptr, v_int as usize))
                         } else {
                             Err("Array index out of bounds".to_string())
