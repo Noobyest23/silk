@@ -1,6 +1,6 @@
 
 use core::panic;
-use std::{collections::{HashMap, HashSet}, os::linux::raw::stat, process::exit};
+use std::{collections::{HashMap, HashSet}, process::exit};
 use crate::{
     environment::scope::Scope,
     parser::ast::{

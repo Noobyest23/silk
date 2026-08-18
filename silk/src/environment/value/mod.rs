@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use std::{fmt};
 use std::cmp::Ordering;
-use std::ffi::{c_char, c_void};
 use crate::environment::vm::{VirtualMachine};
-use crate::parser::ast::{ProgramStatement, stmt::StmtNode};
+use crate::parser::ast::ProgramStatement;
 
 pub type NativeFn = fn (vm: &mut VirtualMachine, &Vec<SilkValue>) -> SilkValue;
 
