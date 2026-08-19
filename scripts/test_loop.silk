@@ -16,3 +16,7 @@ while num < 20 {
 if num != 10 {
     print("not eq")
 }
+
+for i in range(10) {
+    print(i)
+}

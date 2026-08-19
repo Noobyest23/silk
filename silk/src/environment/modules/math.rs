@@ -11,6 +11,126 @@ fn get_double(val: &SilkValue) -> Option<f64> {
     }
 }
 
+// --- Vector Instance Helpers ---
+
+fn extract_vector_fields(vm: &mut VirtualMachine, self_val: &SilkValue, fields: &[&str]) -> Option<Vec<f32>> {
+    let obj_val = match self_val {
+        SilkValue::Pointer(ptr) => vm.heap.get(ptr)?,
+        val => val,
+    };
+
+    if let SilkValue::Object(map) = obj_val {
+        let mut results = Vec::new();
+        for field in fields {
+            let val = map.get(*field)?;
+            let num = get_double(val)? as f32;
+            results.push(num);
+        }
+        Some(results)
+    } else {
+        None
+    }
+}
+
+pub fn silk_vec_magnitude(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
+    if args.is_empty() {
+        vm.error("Vector magnitude method requires self argument".to_string());
+        return SilkValue::Null;
+    }
+
+    // Try Vector4 -> Vector3 -> Vector2
+    let fields = if let Some(components) = extract_vector_fields(vm, &args[0], &["x", "y", "z", "w"]) {
+        components
+    } else if let Some(components) = extract_vector_fields(vm, &args[0], &["x", "y", "z"]) {
+        components
+    } else if let Some(components) = extract_vector_fields(vm, &args[0], &["x", "y"]) {
+        components
+    } else {
+        vm.error("magnitude() called on invalid Vector instance".to_string());
+        return SilkValue::Null;
+    };
+
+    let sum_sq: f32 = fields.iter().map(|c| c * c).sum();
+    SilkValue::Float(sum_sq.sqrt())
+}
+
+pub fn silk_vec_dot(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
+    if args.len() < 2 {
+        vm.error("dot() expects self and another vector as arguments".to_string());
+        return SilkValue::Null;
+    }
+
+    let fields = ["x", "y", "z", "w"];
+    for len in (2..=4).rev() {
+        let active_fields = &fields[..len];
+        if let (Some(v1), Some(v2)) = (
+            extract_vector_fields(vm, &args[0], active_fields),
+            extract_vector_fields(vm, &args[1], active_fields),
+        ) {
+            let dot_product: f32 = v1.iter().zip(v2.iter()).map(|(a, b)| a * b).sum();
+            return SilkValue::Float(dot_product);
+        }
+    }
+
+    vm.error("dot() requires two vectors of matching dimension".to_string());
+    SilkValue::Null
+}
+
+// --- Vector Constructors ---
+
+pub fn silk_vector2(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
+    let x = if args.len() > 0 { get_double(&args[0]).unwrap_or(0.0) as f32 } else { 0.0 };
+    let y = if args.len() > 1 { get_double(&args[1]).unwrap_or(0.0) as f32 } else { 0.0 };
+
+    let mut vec_obj = HashMap::new();
+    vec_obj.insert("x".to_string(), SilkValue::Float(x));
+    vec_obj.insert("y".to_string(), SilkValue::Float(y));
+    vec_obj.insert("magnitude".to_string(), SilkValue::NativeFn(silk_vec_magnitude, "Vector2.magnitude() -> Float".to_string()));
+    vec_obj.insert("dot".to_string(), SilkValue::NativeFn(silk_vec_dot, "Vector2.dot(other: Vector2) -> Float".to_string()));
+
+    let ptr = vm.next_heap_ptr;
+    vm.heap_allocate(SilkValue::Object(vec_obj));
+    SilkValue::Pointer(ptr)
+}
+
+pub fn silk_vector3(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
+    let x = if args.len() > 0 { get_double(&args[0]).unwrap_or(0.0) as f32 } else { 0.0 };
+    let y = if args.len() > 1 { get_double(&args[1]).unwrap_or(0.0) as f32 } else { 0.0 };
+    let z = if args.len() > 2 { get_double(&args[2]).unwrap_or(0.0) as f32 } else { 0.0 };
+
+    let mut vec_obj = HashMap::new();
+    vec_obj.insert("x".to_string(), SilkValue::Float(x));
+    vec_obj.insert("y".to_string(), SilkValue::Float(y));
+    vec_obj.insert("z".to_string(), SilkValue::Float(z));
+    vec_obj.insert("magnitude".to_string(), SilkValue::NativeFn(silk_vec_magnitude, "Vector3.magnitude() -> Float".to_string()));
+    vec_obj.insert("dot".to_string(), SilkValue::NativeFn(silk_vec_dot, "Vector3.dot(other: Vector3) -> Float".to_string()));
+
+    let ptr = vm.next_heap_ptr;
+    vm.heap_allocate(SilkValue::Object(vec_obj));
+    SilkValue::Pointer(ptr)
+}
+
+pub fn silk_vector4(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
+    let x = if args.len() > 0 { get_double(&args[0]).unwrap_or(0.0) as f32 } else { 0.0 };
+    let y = if args.len() > 1 { get_double(&args[1]).unwrap_or(0.0) as f32 } else { 0.0 };
+    let z = if args.len() > 2 { get_double(&args[2]).unwrap_or(0.0) as f32 } else { 0.0 };
+    let w = if args.len() > 3 { get_double(&args[3]).unwrap_or(0.0) as f32 } else { 0.0 };
+
+    let mut vec_obj = HashMap::new();
+    vec_obj.insert("x".to_string(), SilkValue::Float(x));
+    vec_obj.insert("y".to_string(), SilkValue::Float(y));
+    vec_obj.insert("z".to_string(), SilkValue::Float(z));
+    vec_obj.insert("w".to_string(), SilkValue::Float(w));
+    vec_obj.insert("magnitude".to_string(), SilkValue::NativeFn(silk_vec_magnitude, "Vector4.magnitude() -> Float".to_string()));
+    vec_obj.insert("dot".to_string(), SilkValue::NativeFn(silk_vec_dot, "Vector4.dot(other: Vector4) -> Float".to_string()));
+
+    let ptr = vm.next_heap_ptr;
+    vm.heap_allocate(SilkValue::Object(vec_obj));
+    SilkValue::Pointer(ptr)
+}
+
+// --- Standard Math Functions ---
+
 pub fn silk_math_abs(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'abs' expected exactly 1 argument"));
@@ -212,5 +332,10 @@ pub fn build_math_map() -> HashMap<String, SilkValue> {
     map.insert("PI".to_string(), SilkValue::Float(std::f64::consts::PI as f32));
     map.insert("E".to_string(), SilkValue::Float(std::f64::consts::E as f32));
     
+    // Vector Constructors
+    map.insert("Vec2".to_string(), SilkValue::NativeFn(silk_vector2, String::from("Vec2(x: Number = 0, y: Number = 0) -> Vector2")));
+    map.insert("Vec3".to_string(), SilkValue::NativeFn(silk_vector3, String::from("Vec3(x: Number = 0, y: Number = 0, z: Number = 0) -> Vector3")));
+    map.insert("Vec4".to_string(), SilkValue::NativeFn(silk_vector4, String::from("Vec4(x: Number = 0, y: Number = 0, z: Number = 0, w: Number = 0) -> Vector4")));
+
     map
 }

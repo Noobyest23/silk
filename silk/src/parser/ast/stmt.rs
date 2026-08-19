@@ -1,4 +1,4 @@
-use crate::parser::ast::{Program, ProgramExpression, ProgramStatement};
+use crate::parser::ast::{ProgramExpression, ProgramStatement};
 
 use std::fmt;
 
@@ -51,13 +51,13 @@ impl fmt::Display for StmtNode {
             StmtNode::StandaloneExpression(expr) => write!(f, "(standalone) {}", expr.node),
             StmtNode::Return(value) => write!(f, "return {}", value.node),
             StmtNode::If(condition, truthy, falsy) => {
-                write!(f, "if {} '{{'\n", condition.node);
+                write!(f, "if {} '{{'\n", condition.node)?;
                 for truthy_stmt in truthy {
-                    write!(f, "{}\n", truthy_stmt.node);
+                    write!(f, "{}\n", truthy_stmt.node)?;
                 }
-                write!(f, "else '{{'\n");
+                write!(f, "else '{{'\n")?;
                 for falsy_stmt in falsy {
-                    write!(f, "{}\n", falsy_stmt.node);
+                    write!(f, "{}\n", falsy_stmt.node)?;
                 }
                 write!(f, "}}")
             }
@@ -65,16 +65,16 @@ impl fmt::Display for StmtNode {
                 write!(f, "global {}", stmt.node)
             }
             StmtNode::For(var, container, body) => {
-                write!(f, "for {} in {} {{\n", var, container.node);
+                write!(f, "for {} in {} {{\n", var, container.node)?;
                 for stmt in body {
-                    write!(f, "{}\n", stmt.node);
+                    write!(f, "{}\n", stmt.node)?;
                 }
                 write!(f, "}}")
             }
             StmtNode::While(conditional, body) => {
-                write!(f, "while {} {{\n", conditional.node);
+                write!(f, "while {} {{\n", conditional.node)?;
                 for stmt in body {
-                    write!(f, "{}\n", stmt.node);
+                    write!(f, "{}\n", stmt.node)?;
                 }
                 write!(f, "}}")
             }

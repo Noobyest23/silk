@@ -5,8 +5,10 @@ use super::super::value::SilkValue;
 
 
 pub fn silk_io_print(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
-    for arg in args {
-        
+    for (i, arg) in args.iter().enumerate() {
+        if i > 0 {
+            print!(", ");
+        }
         print!("{}", vm.stringify_value(arg));
     }
     println!();

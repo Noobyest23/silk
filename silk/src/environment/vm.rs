@@ -38,7 +38,7 @@ pub struct VirtualMachine {
     
     pub heap: HashMap<usize, SilkValue>,
     
-    next_heap_ptr: usize,
+    pub next_heap_ptr: usize,
     
     stack: Vec<SilkValue>,
     
@@ -894,14 +894,15 @@ impl VirtualMachine {
             v_args.insert(0, SilkValue::Pointer(receiver));
         }
 
-        let SilkValue::Pointer(ptr) = v_ptr else {
-            return Err("Cannot call a non heap allocated type".to_string());
+        let fn_val = if let SilkValue::Pointer(ptr) = v_ptr { 
+            self.heap.get(&ptr).cloned().ok_or_else(|| format!("function reference was not found in the heap"))?
+        }
+        else {
+            v_ptr
         };
+        
 
-        let ptr_val = self.heap.get(&ptr).cloned()
-            .ok_or_else(|| format!("function reference was not found in the heap"))?;
-
-        match ptr_val {
+        match fn_val {
             SilkValue::Function(f_args, body) => {
                 if args.len() != f_args.len() {
                     return Err("Mismatched argument size!".to_string());
@@ -993,7 +994,7 @@ impl VirtualMachine {
 
     
             }
-            _ => Err(format!("Cannot call on a non-function value! ({})", ptr_val))
+            _ => Err(format!("Cannot call on a non-function value! ({})", fn_val))
         }
     }
 

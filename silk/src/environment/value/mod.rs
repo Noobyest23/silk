@@ -1,9 +1,11 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::{fmt};
 use std::cmp::Ordering;
 use crate::environment::vm::{VirtualMachine};
 use crate::parser::ast::ProgramStatement;
+use std::rc::Rc;
 
 pub type NativeFn = fn (vm: &mut VirtualMachine, &Vec<SilkValue>) -> SilkValue;
 
@@ -20,6 +22,7 @@ pub enum SilkValue {
     NativeFn(NativeFn, String),
     Pointer(usize),
     ObjectDefinition(Vec<ProgramStatement>),
+    NativeData(Arc<dyn Any + Send + Sync>),
 }
 
 impl fmt::Display for SilkValue {
@@ -69,10 +72,11 @@ impl fmt::Display for SilkValue {
                     write!(f, "\n    {}", stmt.node)?;
                 }
                 write!(f, "\n}}")
-            }
-            }
+            },
+            SilkValue::NativeData(_) => write!(f, "<internal native data>"),
         }
     }
+}
 
 
 impl SilkValue {
@@ -89,6 +93,7 @@ impl SilkValue {
             SilkValue::Object(_) => true,
             SilkValue::Pointer(ptr) => *ptr == 0 as usize,
             SilkValue::ObjectDefinition(_) => false,
+            SilkValue::NativeData(_) => false,
         }
     }
 
@@ -129,7 +134,7 @@ impl SilkValue {
                     if !x.equals(y) { return false; }
                 }
                 true
-            }
+            },
             _ => false,
         }
     }
@@ -166,6 +171,27 @@ impl SilkValue {
             (SilkValue::List(_), SilkValue::List(_)) => true,
             (SilkValue::Function(_, _), SilkValue::Function(_, _)) => true,
             _ => false,
+        }
+    }
+
+    pub fn new_native<T: Send + Sync + 'static>(data: T) -> Self {
+        SilkValue::NativeData(Arc::new(data))
+    }
+
+    pub fn downcast_ref<T: Send + Sync + 'static>(&self) -> Option<&T> {
+        match self {
+            SilkValue::NativeData(data) => data.downcast_ref::<T>(),
+            _ => None,
+        }
+    }
+
+    pub fn downcast_mut<T: Send + Sync + 'static>(&mut self) -> Option<&mut T> {
+        match self {
+            SilkValue::NativeData(data) => {
+                let any = Arc::get_mut(data)?;
+                any.downcast_mut::<T>()
+            }
+            _ => None,
         }
     }
 }

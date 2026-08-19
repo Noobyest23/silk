@@ -1,0 +1,45 @@
+import "io"
+import "image"
+
+print("--- Testing Image Module ---")
+
+# Load test_image.jpg
+var img = Image("test_image.jpg")
+
+print("Image width: ", img.width())
+print("Image height: ", img.height())
+
+# 1. Pixel Operations
+print("\n--- Testing Pixel Reading and Writing ---")
+var pixel = img.get_pixel(0, 0)
+print("Pixel at (0, 0) [R, G, B, A]: ", pixel)
+
+# Modify a pixel (set top-left corner to full opaque red)
+img.set_pixel(0, 0, 255, 0, 0, 255)
+var new_pixel = img.get_pixel(0, 0)
+print("Updated pixel at (0, 0): ", new_pixel)
+
+# 2. Crop Operations
+print("\n--- Testing Crop ---")
+var cropped = img.crop(0, 0, 50, 50)
+print("Cropped width: ", cropped.width())
+print("Cropped height: ", cropped.height())
+
+# 3. Image Transformations & Filters
+print("\n--- Testing Transformations ---")
+var gray_img = img.grayscale()
+var inverted_img = img.invert()
+var flipped_img = img.flip_h()
+
+# 4. Save Functionality
+print("\n--- Testing Save ---")
+var saved_gray = gray_img.save("output_grayscale.jpg")
+print("Grayscale image saved: ", saved_gray)
+
+var saved_flip = flipped_img.save("output_flipped.jpg")
+print("Flipped image saved: ", saved_flip)
+
+# 5. Resize & ASCII Rendering
+print("\n--- Testing ASCII Art Generation ---")
+var ascii_art = gray_img.ascii(" .:-=+*#%@", 60)
+print(ascii_art)

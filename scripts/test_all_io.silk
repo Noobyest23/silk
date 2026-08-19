@@ -25,7 +25,6 @@ for line in file.getlines() {
     print(line)
 }
 
-
 file.cursor(0)
 print(file.getline())
 delete("io_test_write.txt")

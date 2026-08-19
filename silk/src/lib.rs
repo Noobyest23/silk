@@ -9,10 +9,11 @@ use lexer::Lexer;
 mod environment;
 use environment::vm;
 use environment::modules::io::build_io_map;
-
 use crate::environment::modules::list::build_list_map;
 use crate::environment::modules::math::build_math_map;
 use crate::environment::modules::string::build_string_map;
+use crate::environment::modules::image::build_image_map;
+use crate::environment::modules::builtin::build_builtin_map;
 use crate::environment::value::SilkValue;
 use crate::parser::Parser;
 use std::sync::{Mutex, OnceLock};
@@ -44,6 +45,8 @@ pub unsafe extern "C" fn init() -> bool {
     vm.modules.insert(String::from("math"), build_math_map());
     vm.modules.insert(String::from("string"), build_string_map());
     vm.modules.insert(String::from("list"), build_list_map());
+    vm.modules.insert(String::from("image"), build_image_map());
+    vm.modules.insert(String::from("builtin"), build_builtin_map());
 
 
     init_result

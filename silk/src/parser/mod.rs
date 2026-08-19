@@ -14,6 +14,7 @@ impl Parser {
 
     pub fn parse(&mut self) -> Option<Program> {
         let mut statements = Vec::new();
+        statements.push(ProgramStatement { node: Box::new(StmtNode::Import("builtin".to_string(), "".to_string())), line: 0, column: 0 });
         while !self.is_at_end() {
             let res = self.parse_statement();
             match res {

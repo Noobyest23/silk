@@ -8,3 +8,4 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 colored_text = "0.5.1"
+image = "0.25.10"
