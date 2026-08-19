@@ -3,7 +3,6 @@ use crate::environment::vm::{SilkHandle, VirtualMachine};
 use super::super::value::SilkValue;
 
 
-
 pub fn silk_list_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'len' expects exactly 1 argument"));

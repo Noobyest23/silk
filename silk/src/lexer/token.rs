@@ -20,6 +20,7 @@ pub enum TokenType {
     Not,
 
     Equal,
+    NotEqual,
     PlusEq,
     MinusEq,
     MultiplyEq,
@@ -50,6 +51,7 @@ pub enum TokenType {
     Return,
     Global,
     Struct,
+    In,
 
     Eof,
 }
@@ -81,6 +83,7 @@ impl fmt::Display for TokenType {
 
             
             TokenType::Equal    => write!(f, "="),
+            TokenType::NotEqual => write!(f, "!="),
             TokenType::PlusEq   => write!(f, "+="),
             TokenType::MinusEq  => write!(f, "-="),
             TokenType::MultiplyEq => write!(f, "*="),
@@ -113,6 +116,7 @@ impl fmt::Display for TokenType {
             TokenType::Return => write!(f, "return"),
             TokenType::Global => write!(f, "global"),
             TokenType::Struct => write!(f, "struct"),
+            TokenType::In     => write!(f, "in"),
 
             TokenType::Eof => write!(f, "End of file"),
         }

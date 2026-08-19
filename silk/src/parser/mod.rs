@@ -113,6 +113,8 @@ impl Parser {
                 }
             }
             TokenType::Struct => self.parse_struct(),
+            TokenType::For    => self.parse_for(),
+            TokenType::While  => self.parse_while(),
             _ => {
                 let res = self.parse_expression();
                 match res {
@@ -239,6 +241,39 @@ impl Parser {
         self.advance();
         Ok(ProgramStatement::new(StmtNode::StructDecl(name, struct_body), self.peek().line, self.peek().column))
     }
+
+    fn parse_for(&mut self) -> Result<ProgramStatement, String> {
+        self.advance();
+        let id = self.extract_id();
+        self.advance();
+        let container = self.parse_expression()?;
+
+        let mut body = Vec::new();
+        self.expect(TokenType::OpenSquiggly);
+        while !self.check(TokenType::CloseSquiggly) {
+            let stmt = self.parse_statement()?;
+            body.push(stmt);
+        }
+        self.advance();
+
+        Ok(ProgramStatement::new(StmtNode::For(id, container, body), self.peek().line, self.peek().column))
+    }
+
+    fn parse_while(&mut self) -> Result<ProgramStatement, String> {
+        self.advance();
+        let conditional = self.parse_expression()?;
+
+        let mut body = Vec::new();
+        self.expect(TokenType::OpenSquiggly);
+        while !self.check(TokenType::CloseSquiggly) {
+            let stmt = self.parse_statement()?;
+            body.push(stmt);
+        }
+        self.advance();
+
+        Ok(ProgramStatement::new(StmtNode::While(conditional, body), self.peek().line, self.peek().column))
+    }
+
 }
 
 impl Parser {
@@ -278,10 +313,15 @@ impl Parser {
     fn parse_equality(&mut self) -> Result<ProgramExpression, String> {
         let mut expr = self.parse_boolean()?;
 
-        while self.check(TokenType::DoubleEqual) {
+        while self.check(TokenType::DoubleEqual) || self.check(TokenType::NotEqual) {
+            let operator = match self.peek().t {
+                TokenType::DoubleEqual => SilkOperator::Equality,
+                TokenType::NotEqual    => SilkOperator::NotEqual,
+                _ => unreachable!()
+            };
             self.advance();
             let rhs = self.parse_boolean()?;
-            expr = ProgramExpression::new(ExprNode::Op(expr, rhs, SilkOperator::Equality), self.peek().line, self.peek().column);
+            expr = ProgramExpression::new(ExprNode::Op(expr, rhs, operator), self.peek().line, self.peek().column);
         }
         Ok(expr)
     }

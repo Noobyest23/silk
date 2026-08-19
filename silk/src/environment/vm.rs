@@ -2,8 +2,7 @@
 use core::panic;
 use std::{collections::{HashMap, HashSet}, process::exit};
 use crate::{
-    environment::scope::Scope,
-    parser::ast::{
+    environment::{scope::Scope, value::SilkValue::Pointer}, parser::ast::{
         Program, ProgramExpression, ProgramStatement,
         expr::{ExprNode::{self}, SilkAssignment, SilkOperator},
         stmt::StmtNode,
@@ -19,6 +18,12 @@ type SilkType = usize;
 
 const SILK_EXIT_OK: i32 = 0;
 const SILK_EXIT_ERROR: i32 = 1;
+
+// Supporting enum for numeric coercion
+    enum EitherNumbers {
+        Int(i32, i32),     // Adjust integer type (i32/i64) to match your SilkValue implementation
+        Float(f32, f32),   // Adjust float type (f32/f64) to match your SilkValue implementation
+    }
 
 #[derive(Clone)]
 pub enum SilkHandle {
@@ -166,6 +171,18 @@ impl VirtualMachine {
         return Some(ls);
     }
 
+    pub fn heap_get_object(&mut self, v: SilkValue) -> Option<HashMap<String, SilkValue>> {
+        let SilkValue::Pointer(pointer) = v else {
+            return None;
+        };
+
+        let Some(SilkValue::Object(map)) = self.get_value_from_pointer(pointer).ok() else {
+            return None;
+        };
+
+        return Some(map);
+    }
+
     fn get_value_from_pointer(&self, ptr: usize) -> Result<SilkValue, String> {
         self.heap.get(&ptr).cloned().ok_or_else(|| format!("Invalid heap pointer reference: {}", ptr))
     }
@@ -238,6 +255,14 @@ impl VirtualMachine {
                 self.set_value_in_handle(parent, new_parent_value)
             }
         }
+    }
+
+    fn is_conditional_valid(&self, v: SilkValue) -> Result<bool, String> {
+        if v.is_type(&SilkValue::Bool(false)) {
+            return Ok(v.is_truthy());
+        }
+        
+        Err("Conditional does not evaluate to boolean".to_string())
     }
 
     pub fn execute(&mut self, program: Program, import_mode: bool) -> i32 {
@@ -393,11 +418,85 @@ impl VirtualMachine {
             },
             StmtNode::Global(stmt) => self.evaluate_global_statement(stmt),
             StmtNode::StructDecl(id, data) => self.stmt_struct_decl(id, data),
+            StmtNode::For(var, container, body) => self.stmt_for(var, container, body),
+            StmtNode::While(conditional, body) => self.stmt_while(conditional, body),
             _ => {Some(format!("Statement evaluation for {:?} has not been implemented", statement.node))}
         };
 
         if let Some(err) = res {
             return Some(self.attach_location(err, statement.line, statement.column));
+        }
+
+        None
+    }
+
+    pub fn stmt_for(&mut self, var: &String, container: &ProgramExpression, body: &Vec<ProgramStatement>) -> Option<String> {
+        if self.scope.variables.contains_key(var) {
+            return Some(format!("Cannot declare for loop variable '{}' because it already exists in the scope!", var));
+        }
+
+        let mut v_container = self.evaluate_expression(container).ok()?;
+        
+        if let SilkValue::Pointer(ptr) = v_container {
+            if let Some(v) = self.heap.get(&ptr) {
+                v_container = v.clone();
+            }
+            else {
+                return Some("invalid pointer as for loop container".to_string());
+            }
+        }
+
+        match v_container {
+            SilkValue::List(list) => {
+                for v in list {
+                    let ptr = self.next_heap_ptr;
+                    self.scope = self.scope.child();
+                    let stack_size = self.stack.len();
+
+                    self.heap_allocate(v);
+                    self.stack_push_variable(var.to_string(), Pointer(ptr));
+
+                    for stmt in body {
+                        if let Some(error) = self.evaluate_statement(stmt) {
+                            return Some(error)
+                        }
+                    }
+
+                    while self.stack.len() > stack_size {
+                        self.stack_pop();
+                    }
+                    
+                    self.scope = self.scope.pop();
+                }
+            }
+            _ => {
+                return Some(format!("Cannot iterate through type of {}", v_container));
+            }
+        }
+
+        None
+    }
+
+    pub fn stmt_while(&mut self, conditional: &ProgramExpression, body: &Vec<ProgramStatement>) -> Option<String> {
+        while {
+            let value = self.evaluate_expression(conditional).ok()?;
+            self.is_conditional_valid(value).ok()?
+        } {
+            self.scope = self.scope.child();
+            let stack_size = self.stack.len();
+
+            for stmt in body {
+                if let Some(error) = self.evaluate_statement(stmt) {
+                    return Some(error)
+                }
+            }
+
+            while self.stack.len() > stack_size {
+                self.stack_pop();
+            }
+            
+            self.scope = self.scope.pop();
+
         }
 
         None
@@ -632,36 +731,54 @@ impl VirtualMachine {
     }
 
     pub fn expr_op(&mut self, lhs: &ProgramExpression, rhs: &ProgramExpression, op: &SilkOperator) -> Result<SilkValue, String> {
-        
-        let l_value = self.evaluate_expression(lhs)?;
-        let r_value = self.evaluate_expression(rhs)?;
+        let mut l_value = self.evaluate_expression(lhs)?;
+        let mut r_value = self.evaluate_expression(rhs)?;
+
+        // Dereference pointer values from the heap if present
+        if let SilkValue::Pointer(ptr) = l_value {
+            l_value = self.heap.get(&ptr).ok_or("lhs was not found in the heap")?.clone();
+        }
+        if let SilkValue::Pointer(ptr) = r_value {
+            r_value = self.heap.get(&ptr).ok_or("rhs was not found in the heap")?.clone();
+        }
+
+        // Helper closure to convert mixed Int/Float pairs into either Int or Float operands
+        let coerce_numeric = |l: SilkValue, r: SilkValue| -> Option<EitherNumbers> {
+            match (l, r) {
+                (SilkValue::Int(a), SilkValue::Int(b)) => Some(EitherNumbers::Int(a, b)),
+                (SilkValue::Float(a), SilkValue::Float(b)) => Some(EitherNumbers::Float(a, b)),
+                (SilkValue::Int(a), SilkValue::Float(b)) => Some(EitherNumbers::Float(a as f32, b)),
+                (SilkValue::Float(a), SilkValue::Int(b)) => Some(EitherNumbers::Float(a, b as f32)),
+                _ => None,
+            }
+        };
 
         match op {
-            SilkOperator::Plus => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => Ok(SilkValue::Int(a + b)),
-                (SilkValue::Float(a), SilkValue::Float(b)) => Ok(SilkValue::Float(a + b)),
-                _ => Err("Type mismatch: Expected numeric types for addition".to_string()),
+            SilkOperator::Plus => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => Ok(SilkValue::Int(a + b)),
+                Some(EitherNumbers::Float(a, b)) => Ok(SilkValue::Float(a + b)),
+                None => Err("Type mismatch: Expected numeric types for addition".to_string()),
             },
-            SilkOperator::Minus => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => Ok(SilkValue::Int(a - b)),
-                (SilkValue::Float(a), SilkValue::Float(b)) => Ok(SilkValue::Float(a - b)),
-                _ => Err("Type mismatch: Expected numeric types for subtraction".to_string()),
+            SilkOperator::Minus => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => Ok(SilkValue::Int(a - b)),
+                Some(EitherNumbers::Float(a, b)) => Ok(SilkValue::Float(a + -b)),
+                None => Err("Type mismatch: Expected numeric types for subtraction".to_string()),
             },
-            SilkOperator::Multiply => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => Ok(SilkValue::Int(a * b)),
-                (SilkValue::Float(a), SilkValue::Float(b)) => Ok(SilkValue::Float(a * b)),
-                _ => Err("Type mismatch: Expected numeric types for multiplication".to_string()),
+            SilkOperator::Multiply => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => Ok(SilkValue::Int(a * b)),
+                Some(EitherNumbers::Float(a, b)) => Ok(SilkValue::Float(a * b)),
+                None => Err("Type mismatch: Expected numeric types for multiplication".to_string()),
             },
-            SilkOperator::Divide => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => {
+            SilkOperator::Divide => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => {
                     if b == 0 { return Err("Division by zero error".to_string()); }
                     Ok(SilkValue::Int(a / b))
                 }
-                (SilkValue::Float(a), SilkValue::Float(b)) => {
+                Some(EitherNumbers::Float(a, b)) => {
                     if b == 0.0 { return Err("Division by zero error".to_string()); }
                     Ok(SilkValue::Float(a / b))
                 }
-                _ => Err("Type mismatch: Expected numeric types for division".to_string()),
+                None => Err("Type mismatch: Expected numeric types for division".to_string()),
             },
             SilkOperator::Mod => match (l_value, r_value) {
                 (SilkValue::Int(a), SilkValue::Int(b)) => {
@@ -670,29 +787,31 @@ impl VirtualMachine {
                 }
                 _ => Err("Type mismatch: Modulo operations require Integer types".to_string()),
             },
+            SilkOperator::NotEqual => {
+                Ok(SilkValue::Bool(!l_value.equals(&r_value)))
+            }
             SilkOperator::Equality => {
-                
                 Ok(SilkValue::Bool(l_value.equals(&r_value)))
             }
-            SilkOperator::GreaterThan => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => Ok(SilkValue::Bool(a > b)),
-                (SilkValue::Float(a), SilkValue::Float(b)) => Ok(SilkValue::Bool(a > b)),
-                _ => Err("Cannot apply relative comparison to non-numeric types".to_string())
+            SilkOperator::GreaterThan => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => Ok(SilkValue::Bool(a > b)),
+                Some(EitherNumbers::Float(a, b)) => Ok(SilkValue::Bool(a > b)),
+                None => Err("Cannot apply relative comparison to non-numeric types".to_string()),
             },
-            SilkOperator::LesserThan => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => Ok(SilkValue::Bool(a < b)),
-                (SilkValue::Float(a), SilkValue::Float(b)) => Ok(SilkValue::Bool(a < b)),
-                _ => Err("Cannot apply relative comparison to non-numeric types".to_string())
+            SilkOperator::LesserThan => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => Ok(SilkValue::Bool(a < b)),
+                Some(EitherNumbers::Float(a, b)) => Ok(SilkValue::Bool(a < b)),
+                None => Err("Cannot apply relative comparison to non-numeric types".to_string()),
             },
-            SilkOperator::GreaterThanEq => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => Ok(SilkValue::Bool(a >= b)),
-                (SilkValue::Float(a), SilkValue::Float(b)) => Ok(SilkValue::Bool(a >= b)),
-                _ => Err("Cannot apply relative comparison to non-numeric types".to_string())
+            SilkOperator::GreaterThanEq => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => Ok(SilkValue::Bool(a >= b)),
+                Some(EitherNumbers::Float(a, b)) => Ok(SilkValue::Bool(a >= b)),
+                None => Err("Cannot apply relative comparison to non-numeric types".to_string()),
             },
-            SilkOperator::LesserThanEq => match (l_value, r_value) {
-                (SilkValue::Int(a), SilkValue::Int(b)) => Ok(SilkValue::Bool(a <= b)),
-                (SilkValue::Float(a), SilkValue::Float(b)) => Ok(SilkValue::Bool(a <= b)),
-                _ => Err("Cannot apply relative comparison to non-numeric types".to_string())
+            SilkOperator::LesserThanEq => match coerce_numeric(l_value, r_value) {
+                Some(EitherNumbers::Int(a, b)) => Ok(SilkValue::Bool(a <= b)),
+                Some(EitherNumbers::Float(a, b)) => Ok(SilkValue::Bool(a <= b)),
+                None => Err("Cannot apply relative comparison to non-numeric types".to_string()),
             },
             SilkOperator::And => Ok(SilkValue::Bool(l_value.is_truthy() && r_value.is_truthy())),
             SilkOperator::Or => Ok(SilkValue::Bool(l_value.is_truthy() || r_value.is_truthy())),

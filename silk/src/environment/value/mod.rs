@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::collections::HashMap;
 use std::{fmt};
 use std::cmp::Ordering;
@@ -69,9 +70,10 @@ impl fmt::Display for SilkValue {
                 }
                 write!(f, "\n}}")
             }
+            }
         }
     }
-}
+
 
 impl SilkValue {
     pub fn is_truthy(&self) -> bool {

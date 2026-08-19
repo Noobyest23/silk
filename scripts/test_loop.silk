@@ -1,0 +1,18 @@
+import "io"
+
+var list = [0, 1, 2, 3, 4, 5]
+
+for num in list {
+    print(num)
+}
+
+var num = 10
+
+while num < 20 {
+    num += 1
+    print(num)
+}
+
+if num != 10 {
+    print("not eq")
+}

@@ -63,9 +63,13 @@ impl<'a> Lexer<'a> {
                     continue;
                 }
                 '!' => {
-                    let tok = self.make_token(TokenType::Not);
+                    let start_col = self.column;
                     self.advance();
-                    tokens.push(tok);
+                    if self.match_next('=') {
+                        tokens.push(Token { t: TokenType::NotEqual, line: self.line, column: start_col });
+                    } else {
+                        tokens.push(Token { t: TokenType::Not, line: self.line, column: start_col });
+                    }
                 }
                 '(' => {
                     let tok = self.make_token(TokenType::OpenParen);
@@ -239,6 +243,7 @@ impl<'a> Lexer<'a> {
             "return" => self.make_token(TokenType::Return),
             "global" => self.make_token(TokenType::Global),
             "struct" => self.make_token(TokenType::Struct),
+            "in"     => self.make_token(TokenType::In),
             _        => self.make_token(TokenType::Identifier(ident)),
         }
     }

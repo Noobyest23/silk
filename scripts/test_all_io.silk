@@ -1,21 +1,32 @@
 import "io"
 
 print("Io print!")
-write("io_test_write.txt", "Test content line 1")
+write("io_test_write.txt", "Test content line 1\n")
 print("reading from test file: ")
 print(read("io_test_write.txt"))
-append("io_test_write.txt", "Test content line 2")
+append("io_test_write.txt", "Test content line 2\n")
 print("File after append:")
 print(read("io_test_write.txt"))
 print("File exists: ", exists("io_test_write.txt"))
 print("Nonexistent file exists: ", exists("nonexistent.txt"))
-delete("io_test_write.txt")
-print("File exists after delete: ", exists("io_test_write.txt"))
 
 
-func silk_function() {
-    error("goodbye")
+print("Making file object")
+var file = File("io_test_write.txt")
+file.cursor(999)
+file.writeline("line 1")
+print("File after writeline")
+for line in file.getlines() {
+    print(line)
+}
+file.write("line 2")
+print("File after write")
+for line in file.getlines() {
+    print(line)
 }
 
-silk_function()
-print("unreachable")
+
+file.cursor(0)
+print(file.getline())
+delete("io_test_write.txt")
+print("File exists after delete: ", exists("io_test_write.txt"))

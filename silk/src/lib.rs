@@ -15,10 +15,8 @@ use crate::environment::modules::math::build_math_map;
 use crate::environment::modules::string::build_string_map;
 use crate::environment::value::SilkValue;
 use crate::parser::Parser;
-
 use std::sync::{Mutex, OnceLock};
 use vm::VirtualMachine;
-
 
 static GLOBAL_VM: OnceLock<Mutex<VirtualMachine>> = OnceLock::new();
 

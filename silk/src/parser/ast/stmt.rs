@@ -1,4 +1,4 @@
-use crate::parser::ast::{ProgramExpression, ProgramStatement};
+use crate::parser::ast::{Program, ProgramExpression, ProgramStatement};
 
 use std::fmt;
 
@@ -12,6 +12,8 @@ pub enum StmtNode {
     Return(ProgramExpression),
     If(ProgramExpression, Vec<ProgramStatement>, Vec<ProgramStatement>),
     Global(ProgramStatement), // global declaration. global var blah = 2031049102
+    For(String, ProgramExpression, Vec<ProgramStatement>), // initializer variable, container, body
+    While(ProgramExpression, Vec<ProgramStatement>), // conditional, body
 }
 
 impl fmt::Display for StmtNode {
@@ -61,6 +63,20 @@ impl fmt::Display for StmtNode {
             }
             StmtNode::Global(stmt) => {
                 write!(f, "global {}", stmt.node)
+            }
+            StmtNode::For(var, container, body) => {
+                write!(f, "for {} in {} {{\n", var, container.node);
+                for stmt in body {
+                    write!(f, "{}\n", stmt.node);
+                }
+                write!(f, "}}")
+            }
+            StmtNode::While(conditional, body) => {
+                write!(f, "while {} {{\n", conditional.node);
+                for stmt in body {
+                    write!(f, "{}\n", stmt.node);
+                }
+                write!(f, "}}")
             }
         }
     }
