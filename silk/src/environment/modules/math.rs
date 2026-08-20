@@ -3,6 +3,11 @@ use std::collections::HashMap;
 use crate::environment::vm::VirtualMachine;
 use super::super::value::SilkValue;
 
+// @export Modules/Math
+/*
+    The Math module provides basic mathematical constants, operations, geometric utilities, and 2D/3D/4D vector types.
+*/
+
 fn get_double(val: &SilkValue) -> Option<f64> {
     match val {
         SilkValue::Float(f) => Some(*f as f64),
@@ -30,6 +35,16 @@ fn extract_vector_fields(vm: &mut VirtualMachine, self_val: &SilkValue, fields: 
     }
 }
 
+// @export Modules/Math#Vector.magnitude
+/*
+    <b>Signature</b>
+    <code>Vector.magnitude() -> Float</code>
+
+    <p>Calculates and returns the magnitude (length) of the vector object.</p>
+
+    <b>Returns:</b>
+    - <code>Float</code>: The scalar length of the vector.
+*/
 pub fn silk_vec_magnitude(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() {
         vm.error("Vector magnitude method requires self argument".to_string());
@@ -51,6 +66,19 @@ pub fn silk_vec_magnitude(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     SilkValue::Float(sum_sq.sqrt())
 }
 
+// @export Modules/Math#Vector.dot
+/*
+    <b>Signature</b>
+    <code>Vector.dot(other: Vector) -> Float</code>
+
+    <p>Calculates the scalar dot product between the current vector and another matching dimension vector.</p>
+
+    <b>Parameters:</b>
+    - <code>other</code>: Vector object of matching dimension.
+
+    <b>Returns:</b>
+    - <code>Float</code>: The scalar dot product.
+*/
 pub fn silk_vec_dot(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() < 2 {
         vm.error("dot() expects self and another vector as arguments".to_string());
@@ -73,6 +101,24 @@ pub fn silk_vec_dot(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     SilkValue::Null
 }
 
+// @export Modules/Math#Vec2
+/*
+    <b>Signature</b>
+    <code>Vec2(x: Number = 0, y: Number = 0) -> Vector2</code>
+
+    <p>Constructs a 2D vector object containing x and y components alongside vector arithmetic methods.</p>
+
+    <b>Parameters:</b>
+    - <code>x</code>: (Optional) X coordinate component.
+    - <code>y</code>: (Optional) Y coordinate component.
+
+    <b>Returns:</b>
+    - <code>Vector2</code>: A 2D vector instance.
+
+    <b>Usage:</b>
+    <pre><code>var v = Vec2(3, 4)
+var len = v.magnitude() # 5.0</code></pre>
+*/
 pub fn silk_vector2(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     let x = if args.len() > 0 { get_double(&args[0]).unwrap_or(0.0) as f32 } else { 0.0 };
     let y = if args.len() > 1 { get_double(&args[1]).unwrap_or(0.0) as f32 } else { 0.0 };
@@ -88,6 +134,25 @@ pub fn silk_vector2(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     SilkValue::Pointer(ptr)
 }
 
+// @export Modules/Math#Vec3
+/*
+    <b>Signature</b>
+    <code>Vec3(x: Number = 0, y: Number = 0, z: Number = 0) -> Vector3</code>
+
+    <p>Constructs a 3D vector object containing x, y, and z components alongside vector arithmetic methods.</p>
+
+    <b>Parameters:</b>
+    - <code>x</code>: (Optional) X coordinate component.
+    - <code>y</code>: (Optional) Y coordinate component.
+    - <code>z</code>: (Optional) Z coordinate component.
+
+    <b>Returns:</b>
+    - <code>Vector3</code>: A 3D vector instance.
+
+    <b>Usage:</b>
+    <pre><code>var v = Vec3(1, 2, 2)
+var len = v.magnitude() # 3.0</code></pre>
+*/
 pub fn silk_vector3(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     let x = if args.len() > 0 { get_double(&args[0]).unwrap_or(0.0) as f32 } else { 0.0 };
     let y = if args.len() > 1 { get_double(&args[1]).unwrap_or(0.0) as f32 } else { 0.0 };
@@ -105,6 +170,27 @@ pub fn silk_vector3(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     SilkValue::Pointer(ptr)
 }
 
+// @export Modules/Math#Vec4
+/*
+    <b>Signature</b>
+    <code>Vec4(x: Number = 0, y: Number = 0, z: Number = 0, w: Number = 0) -> Vector4</code>
+
+    <p>Constructs a 4D vector object containing x, y, z, and w components alongside vector arithmetic methods.</p>
+
+    <b>Parameters:</b>
+    - <code>x</code>: (Optional) X coordinate component.
+    - <code>y</code>: (Optional) Y coordinate component.
+    - <code>z</code>: (Optional) Z coordinate component.
+    - <code>w</code>: (Optional) W coordinate component.
+
+    <b>Returns:</b>
+    - <code>Vector4</code>: A 4D vector instance.
+
+    <b>Usage:</b>
+    <pre><code>var v1 = Vec4(1, 0, 0, 0)
+var v2 = Vec4(0, 1, 0, 0)
+var d = v1.dot(v2) # 0.0</code></pre>
+*/
 pub fn silk_vector4(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     let x = if args.len() > 0 { get_double(&args[0]).unwrap_or(0.0) as f32 } else { 0.0 };
     let y = if args.len() > 1 { get_double(&args[1]).unwrap_or(0.0) as f32 } else { 0.0 };
@@ -124,6 +210,22 @@ pub fn silk_vector4(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     SilkValue::Pointer(ptr)
 }
 
+// @export Modules/Math#abs
+/*
+    <b>Signature</b>
+    <code>abs(num: Number) -> Number</code>
+
+    <p>Returns the non-negative absolute value of a given number.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Numerical input value.
+
+    <b>Returns:</b>
+    - <code>Number</code>: Absolute value matching input type (Integer or Float).
+
+    <b>Usage:</b>
+    <pre><code>var a = abs(-5) # 5</code></pre>
+*/
 pub fn silk_math_abs(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'abs' expected exactly 1 argument"));
@@ -140,6 +242,22 @@ pub fn silk_math_abs(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/Math#sqrt
+/*
+    <b>Signature</b>
+    <code>sqrt(num: Number) -> Float</code>
+
+    <p>Computes the square root of a non-negative number.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Numerical input value.
+
+    <b>Returns:</b>
+    - <code>Float</code>: Calculated square root value.
+
+    <b>Usage:</b>
+    <pre><code>var root = sqrt(16) # 4.0</code></pre>
+*/
 pub fn silk_math_sqrt(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'sqrt' expected exactly 1 argument"));
@@ -154,6 +272,23 @@ pub fn silk_math_sqrt(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
     }
 }
 
+// @export Modules/Math#pow
+/*
+    <b>Signature</b>
+    <code>pow(base: Number, exponent: Number) -> Float</code>
+
+    <p>Raises a base number to the specified power exponent.</p>
+
+    <b>Parameters:</b>
+    - <code>base</code>: Base number.
+    - <code>exponent</code>: Power exponent number.
+
+    <b>Returns:</b>
+    - <code>Float</code>: Result of base raised to exponent.
+
+    <b>Usage:</b>
+    <pre><code>var res = pow(2, 3) # 8.0</code></pre>
+*/
 pub fn silk_math_pow(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'pow' expected exactly 2 arguments (base, exponent)"));
@@ -172,6 +307,22 @@ pub fn silk_math_pow(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/Math#floor
+/*
+    <b>Signature</b>
+    <code>floor(num: Number) -> Int</code>
+
+    <p>Rounds a floating-point number down to the nearest integer lower than or equal to the value.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Numerical input value.
+
+    <b>Returns:</b>
+    - <code>Int</code>: Rounded integer.
+
+    <b>Usage:</b>
+    <pre><code>var val = floor(3.7) # 3</code></pre>
+*/
 pub fn silk_math_floor(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'floor' expected exactly 1 argument"));
@@ -186,6 +337,22 @@ pub fn silk_math_floor(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     }
 }
 
+// @export Modules/Math#ceil
+/*
+    <b>Signature</b>
+    <code>ceil(num: Number) -> Int</code>
+
+    <p>Rounds a floating-point number up to the nearest integer greater than or equal to the value.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Numerical input value.
+
+    <b>Returns:</b>
+    - <code>Int</code>: Rounded integer.
+
+    <b>Usage:</b>
+    <pre><code>var val = ceil(3.2) # 4</code></pre>
+*/
 pub fn silk_math_ceil(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'ceil' expected exactly 1 argument"));
@@ -200,6 +367,22 @@ pub fn silk_math_ceil(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
     }
 }
 
+// @export Modules/Math#round
+/*
+    <b>Signature</b>
+    <code>round(num: Number) -> Int</code>
+
+    <p>Rounds a floating-point value to the nearest integer.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Numerical input value.
+
+    <b>Returns:</b>
+    - <code>Int</code>: Nearest rounded integer.
+
+    <b>Usage:</b>
+    <pre><code>var val = round(3.5) # 4</code></pre>
+*/
 pub fn silk_math_round(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'round' expected exactly 1 argument"));
@@ -214,6 +397,23 @@ pub fn silk_math_round(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     }
 }
 
+// @export Modules/Math#min
+/*
+    <b>Signature</b>
+    <code>min(num1: Number, num2: Number) -> Number</code>
+
+    <p>Compares two numbers and returns the smaller value.</p>
+
+    <b>Parameters:</b>
+    - <code>num1</code>: First input value.
+    - <code>num2</code>: Second input value.
+
+    <b>Returns:</b>
+    - <code>Number</code>: The smaller value among the two inputs.
+
+    <b>Usage:</b>
+    <pre><code>var lowest = min(10, 5) # 5</code></pre>
+*/
 pub fn silk_math_min(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'min' expected exactly 2 arguments"));
@@ -238,6 +438,23 @@ pub fn silk_math_min(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/Math#max
+/*
+    <b>Signature</b>
+    <code>max(num1: Number, num2: Number) -> Number</code>
+
+    <p>Compares two numbers and returns the larger value.</p>
+
+    <b>Parameters:</b>
+    - <code>num1</code>: First input value.
+    - <code>num2</code>: Second input value.
+
+    <b>Returns:</b>
+    - <code>Number</code>: The larger value among the two inputs.
+
+    <b>Usage:</b>
+    <pre><code>var highest = max(10, 5) # 10</code></pre>
+*/
 pub fn silk_math_max(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'max' expected exactly 2 arguments"));
@@ -262,6 +479,22 @@ pub fn silk_math_max(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/Math#sin
+/*
+    <b>Signature</b>
+    <code>sin(num: Number) -> Float</code>
+
+    <p>Calculates the trigonometric sine of an angle given in radians.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Angle expressed in radians.
+
+    <b>Returns:</b>
+    - <code>Float</code>: Sine result.
+
+    <b>Usage:</b>
+    <pre><code>var val = sin(PI / 2) # 1.0</code></pre>
+*/
 pub fn silk_math_sin(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'sin' expected exactly 1 argument"));
@@ -276,6 +509,22 @@ pub fn silk_math_sin(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/Math#cos
+/*
+    <b>Signature</b>
+    <code>cos(num: Number) -> Float</code>
+
+    <p>Calculates the trigonometric cosine of an angle given in radians.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Angle expressed in radians.
+
+    <b>Returns:</b>
+    - <code>Float</code>: Cosine result.
+
+    <b>Usage:</b>
+    <pre><code>var val = cos(0) # 1.0</code></pre>
+*/
 pub fn silk_math_cos(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'cos' expected exactly 1 argument"));
@@ -290,6 +539,22 @@ pub fn silk_math_cos(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/Math#tan
+/*
+    <b>Signature</b>
+    <code>tan(num: Number) -> Float</code>
+
+    <p>Calculates the trigonometric tangent of an angle given in radians.</p>
+
+    <b>Parameters:</b>
+    - <code>num</code>: Angle expressed in radians.
+
+    <b>Returns:</b>
+    - <code>Float</code>: Tangent result.
+
+    <b>Usage:</b>
+    <pre><code>var val = tan(0) # 0.0</code></pre>
+*/
 pub fn silk_math_tan(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'tan' expected exactly 1 argument"));

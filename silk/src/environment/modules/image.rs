@@ -3,6 +3,12 @@ use crate::environment::vm::VirtualMachine;
 use super::super::value::SilkValue;
 use image::{DynamicImage, GenericImageView, GenericImage, RgbImage, Rgba, imageops::FilterType};
 
+// @export Modules/Image
+/*
+    The Image module provides robust capabilities for loading, manipulating, and saving image files. 
+    It leverages an internal object-oriented structure where image instances expose various transformation and data extraction methods.
+*/
+
 fn extract_image<'a>(vm: &'a mut VirtualMachine, self_val: &'a SilkValue) -> Option<&'a DynamicImage> {
     let obj_val = match self_val {
         SilkValue::Pointer(ptr) => vm.heap.get(ptr)?,
@@ -53,6 +59,23 @@ fn construct_image_object(vm: &mut VirtualMachine, img: DynamicImage) -> SilkVal
     SilkValue::Pointer(ptr)
 }
 
+// @export Modules/Image#Image
+/*
+    <b>Signature</b>
+    <code>Image(path: String = "") -> Image</code>
+
+    <p>Image Constructor. Opens an existing image from a file path or creates a 1x1 blank image if no path is provided.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: (Optional) The string file path to the image you want to load.
+
+    <b>Returns:</b>
+    - <code>Image</code>: A new instance of an Image object containing methods for manipulation.
+
+    <b>Usage:</b>
+    <pre><code>var img = Image("photo.jpg")
+var blank_img = Image()</code></pre>
+*/
 pub fn silk_image(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() > 1 {
         vm.error("'Image' constructor expects 1 or no arguments".to_string());
@@ -79,6 +102,16 @@ pub fn silk_image(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     construct_image_object(vm, img)
 }
 
+// @export Modules/Image#Image.width
+/*
+    <b>Signature</b>
+    <code>Image.width() -> Int</code>
+
+    <p>Retrieves the width of the image in pixels.</p>
+
+    <b>Returns:</b>
+    - <code>Int</code>: The width of the image.
+*/
 pub fn silk_image_width(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
     extract_image(vm, &args[0])
@@ -86,6 +119,16 @@ pub fn silk_image_width(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
         .unwrap_or(SilkValue::Null)
 }
 
+// @export Modules/Image#Image.height
+/*
+    <b>Signature</b>
+    <code>Image.height() -> Int</code>
+
+    <p>Retrieves the height of the image in pixels.</p>
+
+    <b>Returns:</b>
+    - <code>Int</code>: The height of the image.
+*/
 pub fn silk_image_height(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
     extract_image(vm, &args[0])
@@ -93,6 +136,23 @@ pub fn silk_image_height(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
         .unwrap_or(SilkValue::Null)
 }
 
+// @export Modules/Image#Image.save
+/*
+    <b>Signature</b>
+    <code>Image.save(path: String) -> Bool</code>
+
+    <p>Saves the current state of the image to the specified file path on disk.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: The destination file path (e.g., "output.png").
+
+    <b>Returns:</b>
+    - <code>Bool</code>: <code>true</code> if the save was successful, <code>false</code> otherwise.
+
+    <b>Usage:</b>
+    <pre><code>var img = Image("photo.jpg")
+img.save("copy.png")</code></pre>
+*/
 pub fn silk_image_save(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() < 2 {
         vm.error("Image.save(path) requires target file path".to_string());
@@ -120,6 +180,24 @@ pub fn silk_image_save(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     }
 }
 
+// @export Modules/Image#Image.get_pixel
+/*
+    <b>Signature</b>
+    <code>Image.get_pixel(x: Int, y: Int) -> List</code>
+
+    <p>Gets the RGBA color values of a specific pixel at the given coordinates.</p>
+
+    <b>Parameters:</b>
+    - <code>x</code>: The horizontal coordinate (0-indexed).
+    - <code>y</code>: The vertical coordinate (0-indexed).
+
+    <b>Returns:</b>
+    - <code>List</code>: A list containing 4 integers representing the Red, Green, Blue, and Alpha channels <code>[r, g, b, a]</code>. Returns null if coordinates are out of bounds.
+
+    <b>Usage:</b>
+    <pre><code>var color = img.get_pixel(10, 10)
+print(color) # => [255, 0, 0, 255]</code></pre>
+*/
 pub fn silk_image_get_pixel(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() < 3 {
         vm.error("Image.get_pixel(x, y) expects x and y coordinates".to_string());
@@ -150,6 +228,21 @@ pub fn silk_image_get_pixel(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> S
     SilkValue::Null
 }
 
+// @export Modules/Image#Image.set_pixel
+/*
+    <b>Signature</b>
+    <code>Image.set_pixel(x: Int, y: Int, r: Int, g: Int, b: Int, a: Int = 255) -> Null</code>
+
+    <p>Modifies the image in-place by setting a specific pixel to a designated RGBA color.</p>
+
+    <b>Parameters:</b>
+    - <code>x</code>: The horizontal coordinate.
+    - <code>y</code>: The vertical coordinate.
+    - <code>r</code>: Red channel value (0-255).
+    - <code>g</code>: Green channel value (0-255).
+    - <code>b</code>: Blue channel value (0-255).
+    - <code>a</code>: (Optional) Alpha channel value (0-255). Defaults to 255.
+*/
 pub fn silk_image_set_pixel(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() < 6 {
         vm.error("Image.set_pixel(x, y, r, g, b, a) expects coordinates and RGBA channels".to_string());
@@ -175,6 +268,22 @@ pub fn silk_image_set_pixel(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> S
     SilkValue::Null
 }
 
+// @export Modules/Image#Image.crop
+/*
+    <b>Signature</b>
+    <code>Image.crop(x: Int, y: Int, w: Int, h: Int) -> Image</code>
+
+    <p>Extracts a rectangular portion of the image and returns it as a new Image object.</p>
+
+    <b>Parameters:</b>
+    - <code>x</code>: The starting horizontal coordinate.
+    - <code>y</code>: The starting vertical coordinate.
+    - <code>w</code>: The width of the cropped area.
+    - <code>h</code>: The height of the cropped area.
+
+    <b>Returns:</b>
+    - <code>Image</code>: A new cropped Image instance.
+*/
 pub fn silk_image_crop(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() < 5 {
         vm.error("Image.crop(x, y, w, h) expects 4 positioning parameters".to_string());
@@ -197,6 +306,20 @@ pub fn silk_image_crop(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     construct_image_object(vm, cropped)
 }
 
+// @export Modules/Image#Image.resize
+/*
+    <b>Signature</b>
+    <code>Image.resize(w: Int, h: Int) -> Image</code>
+
+    <p>Resizes the image exactly to the specified dimensions using a triangle filter.</p>
+
+    <b>Parameters:</b>
+    - <code>w</code>: The new target width.
+    - <code>h</code>: The new target height.
+
+    <b>Returns:</b>
+    - <code>Image</code>: A new resized Image instance.
+*/
 pub fn silk_image_resize(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() < 3 { return SilkValue::Null; }
     let (new_w, new_h) = (args[1].as_int().unwrap_or(1) as u32, args[2].as_int().unwrap_or(1) as u32);
@@ -212,6 +335,16 @@ pub fn silk_image_resize(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     construct_image_object(vm, resized)
 }
 
+// @export Modules/Image#Image.grayscale
+/*
+    <b>Signature</b>
+    <code>Image.grayscale() -> Image</code>
+
+    <p>Converts the image to grayscale.</p>
+
+    <b>Returns:</b>
+    - <code>Image</code>: A new grayscale Image instance.
+*/
 pub fn silk_image_grayscale(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
     let gray = {
@@ -225,6 +358,16 @@ pub fn silk_image_grayscale(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> S
     construct_image_object(vm, gray)
 }
 
+// @export Modules/Image#Image.invert
+/*
+    <b>Signature</b>
+    <code>Image.invert() -> Image</code>
+
+    <p>Inverts all colors in the image (e.g., creating a negative effect).</p>
+
+    <b>Returns:</b>
+    - <code>Image</code>: A new inverted Image instance.
+*/
 pub fn silk_image_invert(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
     let inverted = {
@@ -240,6 +383,16 @@ pub fn silk_image_invert(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     construct_image_object(vm, inverted)
 }
 
+// @export Modules/Image#Image.flip_h
+/*
+    <b>Signature</b>
+    <code>Image.flip_h() -> Image</code>
+
+    <p>Flips the image horizontally (mirrors left to right).</p>
+
+    <b>Returns:</b>
+    - <code>Image</code>: A new horizontally flipped Image instance.
+*/
 pub fn silk_image_flip_h(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
     let flipped = {
@@ -253,6 +406,16 @@ pub fn silk_image_flip_h(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     construct_image_object(vm, flipped)
 }
 
+// @export Modules/Image#Image.flip_v
+/*
+    <b>Signature</b>
+    <code>Image.flip_v() -> Image</code>
+
+    <p>Flips the image vertically (upside down).</p>
+
+    <b>Returns:</b>
+    - <code>Image</code>: A new vertically flipped Image instance.
+*/
 pub fn silk_image_flip_v(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
     let flipped = {
@@ -266,6 +429,25 @@ pub fn silk_image_flip_v(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     construct_image_object(vm, flipped)
 }
 
+// @export Modules/Image#Image.ascii
+/*
+    <b>Signature</b>
+    <code>Image.ascii(gradient: String = " .:-=+*#%@", max_w: Int = null, max_h: Int = null) -> String</code>
+
+    <p>Converts the image into an ASCII art string based on pixel luminance.</p>
+
+    <b>Parameters:</b>
+    - <code>gradient</code>: (Optional) A string of characters ordered from darkest to lightest. Defaults to <code>" .:-=+*#%@"</code>.
+    - <code>max_w</code>: (Optional) Maximum width in characters for the output. Aspect ratio is preserved if height is omitted.
+    - <code>max_h</code>: (Optional) Maximum height in characters for the output.
+
+    <b>Returns:</b>
+    - <code>String</code>: The generated ASCII art text.
+
+    <b>Usage:</b>
+    <pre><code>var my_art = img.ascii("@%#*+=-:. ", 80)
+print(my_art)</code></pre>
+*/
 pub fn silk_image_ascii(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
 

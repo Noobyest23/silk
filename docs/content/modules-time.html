@@ -1,0 +1,42 @@
+<!-- Auto-generated -->
+<section>
+<h1>Time</h1>
+<div class="table-of-contents">
+  <h2>Table of Contents</h2>
+  <ul>
+    <li><a href="#modules-time#time"><code>time</code></a></li>
+    <li><a href="#modules-time#time_ms"><code>time_ms</code></a></li>
+    <li><a href="#modules-time#sleep"><code>sleep</code></a></li>
+  </ul>
+</div>
+<hr>
+<div class="doc-section">
+  <p>The Time module provides functions for reading current system clocks and pausing thread execution.</p>
+</div>
+<div id="time" class="doc-section">
+  <h2><code>time</code></h2>
+  <p><b>Signature</b><br>    <code>time() -> Float</code></p>
+<p><p>Returns the current UNIX timestamp measured in seconds since the Epoch.</p></p>
+<p><b>Returns:</b><br>    - <code>Float</code>: Current UNIX timestamp in seconds.</p>
+<b>Usage:</b>
+    <pre><code>var start = time()</code></pre>
+</div>
+<div id="time_ms" class="doc-section">
+  <h2><code>time_ms</code></h2>
+  <p><b>Signature</b><br>    <code>time_ms() -> Int</code></p>
+<p><p>Returns the current UNIX timestamp measured in milliseconds since the Epoch.</p></p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Current UNIX timestamp in milliseconds.</p>
+<b>Usage:</b>
+    <pre><code>var start_ms = time_ms()</code></pre>
+</div>
+<div id="sleep" class="doc-section">
+  <h2><code>sleep</code></h2>
+  <p><b>Signature</b><br>    <code>sleep(seconds: Number) -> Null</code></p>
+<p><p>Blocks thread execution for the specified duration in seconds.</p></p>
+<p><b>Parameters:</b><br>    - <code>seconds</code>: Total amount of time to pause execution in seconds.</p>
+<p><b>Returns:</b><br>    - <code>Null</code></p>
+<b>Usage:</b>
+    <pre><code>sleep(1.5) # Pauses for 1.5 seconds</code></pre>
+</div>
+
+</section>

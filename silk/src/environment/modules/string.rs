@@ -2,6 +2,27 @@ use std::collections::HashMap;
 use crate::environment::vm::{SilkHandle, VirtualMachine};
 use super::super::value::SilkValue;
 
+// @export Modules/String
+/*
+    The String module provides functions for string manipulation, inspection, transformations, and substring searches.
+*/
+
+// @export Modules/String#len
+/*
+    <b>Signature</b>
+    <code>len(s: String) -> Int</code>
+
+    <p>Returns the total number of bytes/characters in a string.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Target string to inspect.
+
+    <b>Returns:</b>
+    - <code>Int</code>: Total length of the string.
+
+    <b>Usage:</b>
+    <pre><code>var length = "Hello World".len() # 11</code></pre>
+*/
 pub fn silk_string_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'len' expects exactly 1 argument"));
@@ -13,6 +34,23 @@ pub fn silk_string_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     SilkValue::Int(s.len() as i32)
 }
 
+// @export Modules/String#concat
+/*
+    <b>Signature</b>
+    <code>concat(s1: String, s2: String) -> String</code>
+
+    <p>Concatenates two strings together and returns the result.</p>
+
+    <b>Parameters:</b>
+    - <code>s1</code>: First string segment.
+    - <code>s2</code>: Second string segment.
+
+    <b>Returns:</b>
+    - <code>String</code>: Combined string value.
+
+    <b>Usage:</b>
+    <pre><code>var greeting = "Hello ".concat("World") # "Hello World"</code></pre>
+*/
 pub fn silk_string_concat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'concat' expects exactly 2 arguments"));
@@ -30,6 +68,22 @@ pub fn silk_string_concat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     }
 }
 
+// @export Modules/String#upper
+/*
+    <b>Signature</b>
+    <code>upper(s: String) -> String</code>
+
+    <p>Converts all characters in a string to uppercase.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Input string to transform.
+
+    <b>Returns:</b>
+    - <code>String</code>: Uppercase string representation.
+
+    <b>Usage:</b>
+    <pre><code>var loud = "hello".upper() # "HELLO"</code></pre>
+*/
 pub fn silk_string_upper(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'upper' expects exactly 1 argument"));
@@ -46,6 +100,22 @@ pub fn silk_string_upper(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     }
 }
 
+// @export Modules/String#lower
+/*
+    <b>Signature</b>
+    <code>lower(s: String) -> String</code>
+
+    <p>Converts all characters in a string to lowercase.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Input string to transform.
+
+    <b>Returns:</b>
+    - <code>String</code>: Lowercase string representation.
+
+    <b>Usage:</b>
+    <pre><code>var quiet = "WORLD".lower() # "world"</code></pre>
+*/
 pub fn silk_string_lower(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'lower' expects exactly 1 argument"));
@@ -62,6 +132,24 @@ pub fn silk_string_lower(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     }
 }
 
+// @export Modules/String#substring
+/*
+    <b>Signature</b>
+    <code>substring(s: String, start: Int, end: Int) -> String</code>
+
+    <p>Extracts a range of characters from index <code>start</code> up to, but excluding, <code>end</code>.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Input string.
+    - <code>start</code>: Zero-based starting character index.
+    - <code>end</code>: Zero-based ending character index (exclusive).
+
+    <b>Returns:</b>
+    - <code>String</code>: Extracted sub-string segment.
+
+    <b>Usage:</b>
+    <pre><code>var sub = "Hello World".substring(0, 5) # "Hello"</code></pre>
+*/
 pub fn silk_string_substring(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 3 {
         vm.error(String::from("'substring' expects exactly 3 arguments"));
@@ -97,6 +185,22 @@ pub fn silk_string_substring(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> 
     }
 }
 
+// @export Modules/String#trim
+/*
+    <b>Signature</b>
+    <code>trim(s: String) -> String</code>
+
+    <p>Strips leading and trailing whitespace characters from a string.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Input string to trim.
+
+    <b>Returns:</b>
+    - <code>String</code>: Cleaned string without boundary whitespace.
+
+    <b>Usage:</b>
+    <pre><code>var clean = "   hello   ".trim() # "hello"</code></pre>
+*/
 pub fn silk_string_trim(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'trim' expects exactly 1 argument"));
@@ -113,6 +217,25 @@ pub fn silk_string_trim(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
     }
 }
 
+// @export Modules/String#contains
+/*
+    <b>Signature</b>
+    <code>contains(s: String, needle: String) -> Bool</code>
+
+    <p>Checks whether a target string contains a specified substring sequence.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Base string to search within.
+    - <code>needle</code>: Target substring to check for.
+
+    <b>Returns:</b>
+    - <code>Bool</code>: <code>true</code> if the needle substring is found, otherwise <code>false</code>.
+
+    <b>Usage:</b>
+    <pre><code>if "banana".contains("nan") {
+    # Match found
+}</code></pre>
+*/
 pub fn silk_string_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'contains' expects exactly 2 arguments"));
@@ -125,6 +248,24 @@ pub fn silk_string_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> S
     SilkValue::Bool(haystack.contains(&needle))
 }
 
+// @export Modules/String#replace
+/*
+    <b>Signature</b>
+    <code>replace(s: String, old: String, new: String) -> String</code>
+
+    <p>Replaces all occurrences of a target substring with a replacement string.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Input string.
+    - <code>old</code>: Target substring pattern to find.
+    - <code>new</code>: Replacement string content.
+
+    <b>Returns:</b>
+    - <code>String</code>: Transformed string value.
+
+    <b>Usage:</b>
+    <pre><code>var res = "foo bar".replace("bar", "baz") # "foo baz"</code></pre>
+*/
 pub fn silk_string_replace(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 3 {
         vm.error(String::from("'replace' expects exactly 3 arguments"));
@@ -143,6 +284,22 @@ pub fn silk_string_replace(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     }
 }
 
+// @export Modules/String#reverse
+/*
+    <b>Signature</b>
+    <code>reverse(s: String) -> String</code>
+
+    <p>Reverses the character sequence of a given string.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Input string to reverse.
+
+    <b>Returns:</b>
+    - <code>String</code>: Reversed string value.
+
+    <b>Usage:</b>
+    <pre><code>var rev = "abc".reverse() # "cba"</code></pre>
+*/
 pub fn silk_string_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'reverse' expects exactly 1 argument"));
@@ -158,6 +315,25 @@ pub fn silk_string_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     }
 }
 
+// @export Modules/String#starts_with
+/*
+    <b>Signature</b>
+    <code>starts_with(s: String, prefix: String) -> Bool</code>
+
+    <p>Verifies if a string begins with the specified prefix sequence.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Base string to inspect.
+    - <code>prefix</code>: Prefix text sequence to test.
+
+    <b>Returns:</b>
+    - <code>Bool</code>: <code>true</code> if prefix matches, <code>false</code> otherwise.
+
+    <b>Usage:</b>
+    <pre><code>if "http://example.com".starts_with("http") {
+    # URL prefix matched
+}</code></pre>
+*/
 pub fn silk_string_starts_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'starts_with' expects exactly 2 arguments"));
@@ -170,6 +346,25 @@ pub fn silk_string_starts_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -
     SilkValue::Bool(s.starts_with(&prefix))
 }
 
+// @export Modules/String#ends_with
+/*
+    <b>Signature</b>
+    <code>ends_with(s: String, suffix: String) -> Bool</code>
+
+    <p>Verifies if a string terminates with the specified suffix sequence.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Base string to inspect.
+    - <code>suffix</code>: Suffix text sequence to test.
+
+    <b>Returns:</b>
+    - <code>Bool</code>: <code>true</code> if suffix matches, <code>false</code> otherwise.
+
+    <b>Usage:</b>
+    <pre><code>if "image.png".ends_with(".png") {
+    # PNG extension matched
+}</code></pre>
+*/
 pub fn silk_string_ends_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'ends_with' expects exactly 2 arguments"));
@@ -182,6 +377,23 @@ pub fn silk_string_ends_with(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> 
     SilkValue::Bool(s.ends_with(&suffix))
 }
 
+// @export Modules/String#index_of
+/*
+    <b>Signature</b>
+    <code>index_of(s: String, needle: String) -> Int</code>
+
+    <p>Returns the byte index of the first occurrence of a substring.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Base string to search within.
+    - <code>needle</code>: Target substring sequence.
+
+    <b>Returns:</b>
+    - <code>Int</code>: Zero-based byte index of match start, or <code>-1</code> if not found.
+
+    <b>Usage:</b>
+    <pre><code>var idx = "hello world".index_of("world") # 6</code></pre>
+*/
 pub fn silk_string_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'index_of' expects exactly 2 arguments"));
@@ -197,6 +409,23 @@ pub fn silk_string_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> S
     }
 }
 
+// @export Modules/String#repeat
+/*
+    <b>Signature</b>
+    <code>repeat(s: String, n: Int) -> String</code>
+
+    <p>Creates a string by duplicating an input string <code>n</code> times.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Text payload to repeat.
+    - <code>n</code>: Number of repetitions to generate.
+
+    <b>Returns:</b>
+    - <code>String</code>: Repeated string sequence.
+
+    <b>Usage:</b>
+    <pre><code>var echo = "ha".repeat(3) # "hahaha"</code></pre>
+*/
 pub fn silk_string_repeat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'repeat' expects exactly 2 arguments"));
@@ -223,6 +452,23 @@ pub fn silk_string_repeat(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     }
 }
 
+// @export Modules/String#char_at
+/*
+    <b>Signature</b>
+    <code>char_at(s: String, index: Int) -> String</code>
+
+    <p>Returns a single-character string residing at the specified zero-based character position.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Target string.
+    - <code>index</code>: Zero-based character index.
+
+    <b>Returns:</b>
+    - <code>String</code>: Single-character string, or <code>Null</code> if the index exceeds string boundaries.
+
+    <b>Usage:</b>
+    <pre><code>var ch = "Silk".char_at(0) # "S"</code></pre>
+*/
 pub fn silk_string_char_at(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'char_at' expects exactly 2 arguments"));
@@ -254,6 +500,23 @@ pub fn silk_string_char_at(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     }
 }
 
+// @export Modules/String#count
+/*
+    <b>Signature</b>
+    <code>count(s: String, needle: String) -> Int</code>
+
+    <p>Counts the non-overlapping occurrences of a substring inside a target string.</p>
+
+    <b>Parameters:</b>
+    - <code>s</code>: Base string to search within.
+    - <code>needle</code>: Target substring pattern.
+
+    <b>Returns:</b>
+    - <code>Int</code>: Total match count.
+
+    <b>Usage:</b>
+    <pre><code>var total = "banana".count("a") # 3</code></pre>
+*/
 pub fn silk_string_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'count' expects exactly 2 arguments"));

@@ -2,7 +2,28 @@ use std::collections::HashMap;
 use crate::environment::vm::{SilkHandle, VirtualMachine};
 use super::super::value::SilkValue;
 
+// @export Modules/List
+/*
+    The List module provides functions for querying, modifying, and manipulating list structures.
+*/
 
+// @export Modules/List#len
+/*
+    <b>Signature</b>
+    <code>len(list: List) -> Int</code>
+
+    <p>Returns the total number of elements contained in the specified list.</p>
+
+    <b>Parameters:</b>
+    - <code>list</code>: The target list to inspect.
+
+    <b>Returns:</b>
+    - <code>Int</code>: The number of items in the list.
+
+    <b>Usage:</b>
+    <pre><code>var items = [1, 2, 3]
+var count = items.len() # 3</code></pre>
+*/
 pub fn silk_list_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'len' expects exactly 1 argument"));
@@ -12,8 +33,26 @@ pub fn silk_list_len(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     SilkValue::Int(list.len() as i32)
 }
 
+// @export Modules/List#contains
+/*
+    <b>Signature</b>
+    <code>contains(list: List, item: Any) -> Bool</code>
 
+    <p>Checks whether a given item is present inside the specified list.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: The list to search through.
+    - <code>item</code>: The element or value to search for.
+
+    <b>Returns:</b>
+    - <code>Bool</code>: <code>true</code> if the item is found, <code>false</code> otherwise.
+
+    <b>Usage:</b>
+    <pre><code>var fruits = ["apple", "banana"]
+if fruits.contains("apple") {
+    print("Found!")
+}</code></pre>
+*/
 pub fn silk_list_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'contains' expects exactly 2 argument"));
@@ -23,7 +62,6 @@ pub fn silk_list_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     let needle = args[1].clone();
 
     for item in list {
-        
         let matches = match (&item, &needle) {
             (SilkValue::Pointer(_), SilkValue::Pointer(_)) => {
                 let item_str = vm.heap_get_string(item.clone());
@@ -44,8 +82,24 @@ pub fn silk_list_contains(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     SilkValue::Bool(false)
 }
 
+// @export Modules/List#index_of
+/*
+    <b>Signature</b>
+    <code>index_of(list: List, item: Any) -> Int</code>
 
+    <p>Finds the zero-based index of the first occurrence of a value in the list.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: The list to search.
+    - <code>item</code>: The target element to locate.
+
+    <b>Returns:</b>
+    - <code>Int</code>: Zero-based index of the item, or <code>-1</code> if not found.
+
+    <b>Usage:</b>
+    <pre><code>var letters = ["a", "b", "c"]
+var idx = letters.index_of("b") # 1</code></pre>
+*/
 pub fn silk_list_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'index_of' expects exactly 2 argument"));
@@ -55,7 +109,6 @@ pub fn silk_list_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     let needle = args[1].clone();
 
     for (idx, item) in list.iter().enumerate() {
-        
         let matches = match (item, &needle) {
             (SilkValue::Pointer(_), SilkValue::Pointer(_)) => {
                 let item_str = vm.heap_get_string(item.clone());
@@ -76,8 +129,25 @@ pub fn silk_list_index_of(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     SilkValue::Int(-1)
 }
 
+// @export Modules/List#slice
+/*
+    <b>Signature</b>
+    <code>slice(list: List, start: Int, end: Int) -> List</code>
 
+    <p>Creates and returns a new list containing elements from index <code>start</code> up to, but excluding, index <code>end</code>.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: Source list to slice.
+    - <code>start</code>: Zero-based starting index.
+    - <code>end</code>: Zero-based ending index (exclusive).
+
+    <b>Returns:</b>
+    - <code>List</code>: A sub-list created from the target range.
+
+    <b>Usage:</b>
+    <pre><code>var nums = [10, 20, 30, 40]
+var sub = nums.slice(1, 3) # [20, 30]</code></pre>
+*/
 pub fn silk_list_slice(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 3 {
         vm.error(String::from("'slice' expects exactly 3 argument"));
@@ -110,8 +180,24 @@ pub fn silk_list_slice(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     }
 }
 
+// @export Modules/List#push
+/*
+    <b>Signature</b>
+    <code>push(list: List, item: Any) -> List</code>
 
+    <p>Appends an item to the end of a list and returns an updated list pointer.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: Target list to expand.
+    - <code>item</code>: Value to append.
+
+    <b>Returns:</b>
+    - <code>List</code>: Pointer to the newly allocated list with the element added.
+
+    <b>Usage:</b>
+    <pre><code>var items = [1, 2]
+items = items.push(3)</code></pre>
+*/
 pub fn silk_list_push(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'push' expects exactly 2 arguments"));
@@ -127,8 +213,23 @@ pub fn silk_list_push(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
     }
 }
 
+// @export Modules/List#pop
+/*
+    <b>Signature</b>
+    <code>pop(list: List) -> List</code>
 
+    <p>Removes the last element from a list and returns an updated list pointer.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: Target list to shorten.
+
+    <b>Returns:</b>
+    - <code>List</code>: Pointer to the newly allocated list with the last element removed.
+
+    <b>Usage:</b>
+    <pre><code>var items = [1, 2, 3]
+items = items.pop()</code></pre>
+*/
 pub fn silk_list_pop(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'pop' expects exactly 1 argument"));
@@ -146,8 +247,23 @@ pub fn silk_list_pop(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/List#first
+/*
+    <b>Signature</b>
+    <code>first(list: List) -> Any</code>
 
+    <p>Retrieves the first element of a list.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: Target list.
+
+    <b>Returns:</b>
+    - <code>Any</code>: The first value in the list, or <code>Null</code> if the list is empty.
+
+    <b>Usage:</b>
+    <pre><code>var nums = [10, 20, 30]
+var head = nums.first() # 10</code></pre>
+*/
 pub fn silk_list_first(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'first' expects exactly 1 argument"));
@@ -161,8 +277,23 @@ pub fn silk_list_first(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     }
 }
 
+// @export Modules/List#last
+/*
+    <b>Signature</b>
+    <code>last(list: List) -> Any</code>
 
+    <p>Retrieves the final element of a list.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: Target list.
+
+    <b>Returns:</b>
+    - <code>Any</code>: The last value in the list, or <code>Null</code> if the list is empty.
+
+    <b>Usage:</b>
+    <pre><code>var nums = [10, 20, 30]
+var tail = nums.last() # 30</code></pre>
+*/
 pub fn silk_list_last(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'last' expects exactly 1 argument"));
@@ -176,8 +307,23 @@ pub fn silk_list_last(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
     }
 }
 
+// @export Modules/List#reverse
+/*
+    <b>Signature</b>
+    <code>reverse(list: List) -> List</code>
 
+    <p>Reverses the order of elements in a list and returns a new list pointer containing the reversed elements.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: Target list to reverse.
+
+    <b>Returns:</b>
+    - <code>List</code>: Pointer to a new list containing elements in reverse order.
+
+    <b>Usage:</b>
+    <pre><code>var nums = [1, 2, 3]
+var inverted = nums.reverse() # [3, 2, 1]</code></pre>
+*/
 pub fn silk_list_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'reverse' expects exactly 1 argument"));
@@ -193,8 +339,24 @@ pub fn silk_list_reverse(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     }
 }
 
+// @export Modules/List#count
+/*
+    <b>Signature</b>
+    <code>count(list: List, item: Any) -> Int</code>
 
+    <p>Counts the total occurrences of a specific item within the list.</p>
 
+    <b>Parameters:</b>
+    - <code>list</code>: Target list to examine.
+    - <code>item</code>: Value to count within the list.
+
+    <b>Returns:</b>
+    - <code>Int</code>: The number of times the item appears.
+
+    <b>Usage:</b>
+    <pre><code>var values = [1, 2, 2, 3, 2]
+var c = values.count(2) # 3</code></pre>
+*/
 pub fn silk_list_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'count' expects exactly 2 arguments"));
@@ -205,7 +367,6 @@ pub fn silk_list_count(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
 
     let mut count = 0;
     for item in list.iter() {
-        
         let matches = match (item, &needle) {
             (SilkValue::Pointer(_), SilkValue::Pointer(_)) => {
                 let item_str = vm.heap_get_string(item.clone());

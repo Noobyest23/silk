@@ -4,6 +4,11 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::environment::vm::VirtualMachine;
 use super::super::value::SilkValue;
 
+// @export Modules/Time
+/*
+    The Time module provides functions for reading current system clocks and pausing thread execution.
+*/
+
 fn get_double(val: &SilkValue) -> Option<f64> {
     match val {
         SilkValue::Float(f) => Some(*f as f64),
@@ -12,7 +17,19 @@ fn get_double(val: &SilkValue) -> Option<f64> {
     }
 }
 
-// Returns current UNIX timestamp in seconds as a Float
+// @export Modules/Time#time
+/*
+    <b>Signature</b>
+    <code>time() -> Float</code>
+
+    <p>Returns the current UNIX timestamp measured in seconds since the Epoch.</p>
+
+    <b>Returns:</b>
+    - <code>Float</code>: Current UNIX timestamp in seconds.
+
+    <b>Usage:</b>
+    <pre><code>var start = time()</code></pre>
+*/
 pub fn silk_time_now(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if !args.is_empty() {
         vm.error("time() expects no arguments".to_string());
@@ -28,7 +45,19 @@ pub fn silk_time_now(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
-// Returns current UNIX timestamp in milliseconds as an Int
+// @export Modules/Time#time_ms
+/*
+    <b>Signature</b>
+    <code>time_ms() -> Int</code>
+
+    <p>Returns the current UNIX timestamp measured in milliseconds since the Epoch.</p>
+
+    <b>Returns:</b>
+    - <code>Int</code>: Current UNIX timestamp in milliseconds.
+
+    <b>Usage:</b>
+    <pre><code>var start_ms = time_ms()</code></pre>
+*/
 pub fn silk_time_ms(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if !args.is_empty() {
         vm.error("time_ms() expects no arguments".to_string());
@@ -44,7 +73,22 @@ pub fn silk_time_ms(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     }
 }
 
-// Pauses execution for a specified duration in seconds
+// @export Modules/Time#sleep
+/*
+    <b>Signature</b>
+    <code>sleep(seconds: Number) -> Null</code>
+
+    <p>Blocks thread execution for the specified duration in seconds.</p>
+
+    <b>Parameters:</b>
+    - <code>seconds</code>: Total amount of time to pause execution in seconds.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+
+    <b>Usage:</b>
+    <pre><code>sleep(1.5) # Pauses for 1.5 seconds</code></pre>
+*/
 pub fn silk_time_sleep(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error("sleep(seconds) expects exactly 1 argument".to_string());

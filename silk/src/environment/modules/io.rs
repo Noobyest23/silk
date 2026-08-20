@@ -3,7 +3,30 @@ use crate::environment::vm::{SilkHandle::{self, HeapAllocated}, VirtualMachine};
 use std::io;
 use super::super::value::SilkValue;
 
+// @export Modules/IO
+/*
+    The IO module provides file system, input/output, and console control utilities.
+    It includes global IO helper functions as well as an object-oriented File interface for reading and writing streams.
+*/
 
+// @export Modules/IO#print
+/*
+    <b>Signature</b>
+    <code>print(any, ...) -> Null</code>
+
+    <p>Prints one or more values to standard output, separated by commas, followed by a newline.</p>
+
+    <b>Parameters:</b>
+    - <code>...args</code>: Values to display in the console.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+
+    <b>Usage:</b>
+    <pre><code># Basic variable definition
+var msg = "Hello, world!"
+print(msg, 42)</code></pre>
+*/
 pub fn silk_io_print(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     for (i, arg) in args.iter().enumerate() {
         if i > 0 {
@@ -15,18 +38,31 @@ pub fn silk_io_print(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     SilkValue::Null
 }
 
+// @export Modules/IO#read
+/*
+    <b>Signature</b>
+    <code>read(path: String) -> String</code>
+
+    <p>Reads the entire contents of a file at the given path into a string.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: The path to the file.
+
+    <b>Returns:</b>
+    - <code>String</code>: File contents, or <code>Null</code> on failure.
+
+    <b>Usage:</b>
+    <pre><code>var content = read("data.txt")</code></pre>
+*/
 pub fn silk_io_read(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
-    
     if args.len() != 1 {
         vm.error(String::from("'read' expects exactly 1 argument"));
     }
 
     let path_str = vm.heap_get_string(args[0].clone()).unwrap_or_default();
 
-    
     match std::fs::read_to_string(path_str) {
         Ok(contents) => {
-            
             let handle = vm.heap_allocate(SilkValue::String(contents));
             match handle {
                 SilkHandle::HeapAllocated(p) => SilkValue::Pointer(p),
@@ -40,13 +76,29 @@ pub fn silk_io_read(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     }
 }
 
+// @export Modules/IO#write
+/*
+    <b>Signature</b>
+    <code>write(path: String, content: String) -> Null</code>
+
+    <p>Writes text content to a target file, creating or completely overwriting it.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: Destination file path.
+    - <code>content</code>: Text payload to write.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+
+    <b>Usage:</b>
+    <pre><code>write("output.txt", "Hello World")</code></pre>
+*/
 pub fn silk_io_write(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'write' expects exactly 2 arguments"));
     }
 
     let path_str = vm.heap_get_string(args[0].clone()).unwrap_or_default();
-
     let contents = vm.heap_get_string(args[1].clone()).unwrap_or_default();
 
     let result = std::fs::write(path_str, &contents);
@@ -59,12 +111,26 @@ pub fn silk_io_write(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     }
 }
 
+// @export Modules/IO#input
+/*
+    <b>Signature</b>
+    <code>input(prompt: String = "") -> String</code>
+
+    <p>Reads a single line of standard input from the console after displaying an optional prompt string.</p>
+
+    <b>Parameters:</b>
+    - <code>prompt</code>: (Optional) Text prompt to show before waiting for user input.
+
+    <b>Returns:</b>
+    - <code>String</code>: User input stripped of trailing newlines.
+
+    <b>Usage:</b>
+    <pre><code>var name = input("Enter your name: ")</code></pre>
+*/
 pub fn silk_io_input(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     let mut prompt = String::new();
     if args.len() == 1 {
-
         let prompt_str = vm.heap_get_string(args[0].clone()).unwrap_or_default();
-
         prompt = prompt_str.clone();
     }
     else if args.len() != 0 {
@@ -80,16 +146,33 @@ pub fn silk_io_input(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
         .read_line(&mut input)
         .expect("Failed to read line");
 
-	let input_val = SilkValue::String(input.trim_end().to_string());
-	let handle = vm.heap_allocate(input_val);
-	match handle {
-		SilkHandle::HeapAllocated(ptr) => {
-			return SilkValue::Pointer(ptr);
-		}
-		_ => unreachable!()
-	}
+    let input_val = SilkValue::String(input.trim_end().to_string());
+    let handle = vm.heap_allocate(input_val);
+    match handle {
+        SilkHandle::HeapAllocated(ptr) => {
+            return SilkValue::Pointer(ptr);
+        }
+        _ => unreachable!()
+    }
 }
 
+// @export Modules/IO#append
+/*
+    <b>Signature</b>
+    <code>append(path: String, content: String) -> Null</code>
+
+    <p>Appends text content to the end of a specified file. Creates the file if it doesn't exist.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: Destination file path.
+    - <code>content</code>: Text payload to append.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+
+    <b>Usage:</b>
+    <pre><code>append("log.txt", "New entry\n")</code></pre>
+*/
 pub fn silk_io_append(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'append' expects exactly 2 arguments"));
@@ -119,6 +202,24 @@ pub fn silk_io_append(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
     }
 }
 
+// @export Modules/IO#exists
+/*
+    <b>Signature</b>
+    <code>exists(path: String) -> Bool</code>
+
+    <p>Checks whether a given path exists on the file system.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: File or directory path to verify.
+
+    <b>Returns:</b>
+    - <code>Bool</code>: <code>true</code> if the path exists, otherwise <code>false</code>.
+
+    <b>Usage:</b>
+    <pre><code>if exists("config.json") {
+    # File found
+}</code></pre>
+*/
 pub fn silk_io_exists(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'exists' expects exactly 1 argument"));
@@ -128,6 +229,22 @@ pub fn silk_io_exists(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
     SilkValue::Bool(std::path::Path::new(&path_str).exists())
 }
 
+// @export Modules/IO#delete
+/*
+    <b>Signature</b>
+    <code>delete(path: String) -> Null</code>
+
+    <p>Deletes a file from the file system.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: Path of the file to remove.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+
+    <b>Usage:</b>
+    <pre><code>delete("temp.tmp")</code></pre>
+*/
 pub fn silk_io_delete(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'delete' expects exactly 1 argument"));
@@ -143,6 +260,22 @@ pub fn silk_io_delete(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVal
     }
 }
 
+// @export Modules/IO#error
+/*
+    <b>Signature</b>
+    <code>error(message: String = "error() was called") -> Null</code>
+
+    <p>Raises a fatal runtime error with an optional descriptive message, halting VM execution.</p>
+
+    <b>Parameters:</b>
+    - <code>message</code>: (Optional) Error reason text.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+
+    <b>Usage:</b>
+    <pre><code>error("Fatal crash")</code></pre>
+*/
 pub fn silk_io_error(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() == 1 {
         let message = vm.heap_get_string(args[0].clone()).unwrap_or_default();
@@ -213,6 +346,19 @@ fn extract_file_info(vm: &mut VirtualMachine, arg: &SilkValue, fn_name: &str) ->
     Some((file_ptr, map, path))
 }
 
+// @export Modules/IO#File.write
+/*
+    <b>Signature</b>
+    <code>File.write(content: String) -> Null</code>
+
+    <p>Writes content to the handle's target file starting at the current cursor offset.</p>
+
+    <b>Parameters:</b>
+    - <code>content</code>: Text buffer to write.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+*/
 pub fn silk_file_write(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'file.write' expects 2 arguments (file, content)"));
@@ -234,6 +380,19 @@ pub fn silk_file_write(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
     SilkValue::Null
 }
 
+// @export Modules/IO#File.writeline
+/*
+    <b>Signature</b>
+    <code>File.writeline(line: String) -> Null</code>
+
+    <p>Writes content to the handle's target file and appends a trailing newline character.</p>
+
+    <b>Parameters:</b>
+    - <code>line</code>: Line string to write.
+
+    <b>Returns:</b>
+    - <code>Null</code>
+*/
 pub fn silk_file_writeline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'file.writeline' expects 2 arguments (file, line)"));
@@ -256,6 +415,19 @@ pub fn silk_file_writeline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     SilkValue::Null
 }
 
+// @export Modules/IO#File.cursor
+/*
+    <b>Signature</b>
+    <code>File.cursor(pos: Int) -> Int</code>
+
+    <p>Moves the internal byte read/write stream cursor position within the file.</p>
+
+    <b>Parameters:</b>
+    - <code>pos</code>: Absolute byte offset from start of file.
+
+    <b>Returns:</b>
+    - <code>Int</code>: New absolute byte cursor position.
+*/
 pub fn silk_file_cursor(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 2 {
         vm.error(String::from("'file.cursor' expects 2 arguments (file, position)"));
@@ -287,6 +459,16 @@ pub fn silk_file_cursor(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
     SilkValue::Null
 }
 
+// @export Modules/IO#File.getline
+/*
+    <b>Signature</b>
+    <code>File.getline() -> String</code>
+
+    <p>Reads and returns the next line of text from the file starting from current cursor position.</p>
+
+    <b>Returns:</b>
+    - <code>String</code>: Next text line (excluding newline characters).
+*/
 pub fn silk_file_getline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'file.getline' function expects 1 argument"));
@@ -323,6 +505,16 @@ pub fn silk_file_getline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     SilkValue::Null
 }
 
+// @export Modules/IO#File.getlines
+/*
+    <b>Signature</b>
+    <code>File.getlines() -> List</code>
+
+    <p>Resets the file pointer to byte 0 and reads every line into a list of strings.</p>
+
+    <b>Returns:</b>
+    - <code>List</code>: List containing strings for each line in the file.
+*/
 pub fn silk_file_getlines(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'file.getlines' function expects 1 argument"));
@@ -369,6 +561,24 @@ pub fn silk_file_getlines(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     SilkValue::Null
 }
 
+// @export Modules/IO#File
+/*
+    <b>Signature</b>
+    <code>File(path: String) -> File</code>
+
+    <p>Instantiates an object-oriented stream file reference open for reading and writing.</p>
+
+    <b>Parameters:</b>
+    - <code>path</code>: The file system target path.
+
+    <b>Returns:</b>
+    - <code>File</code>: An instance of a File object providing streaming methods.
+
+    <b>Usage:</b>
+    <pre><code>var f = File("notes.txt")
+f.writeline("Hello")
+var lines = f.getlines()</code></pre>
+*/
 pub fn silk_file_construct(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
         vm.error(String::from("'File' constructor expects 1 argument"));

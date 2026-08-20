@@ -20,7 +20,7 @@ fn dereference_value(vm: &VirtualMachine, value: SilkValue) -> SilkValue {
 
 // @export Modules/Global#range
 /*
-    <h3>Signature</h3>
+    <b>Signature</b>
     <code>range(stop: Int) -> List</code><br>
     <code>range(start: Int, stop: Int, step: Int = 1) -> List</code>
 
@@ -35,10 +35,10 @@ fn dereference_value(vm: &VirtualMachine, value: SilkValue) -> SilkValue {
     - <code>List</code>: A list containing the generated integer sequence.
 
     <b>Usage:</b>
-    <pre><code>range(0, 10)    // => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-range(5)        // => [0, 1, 2, 3, 4]
-range(1, 10, 2) // => [1, 3, 5, 7, 9]
-range(10, 0, -1) // => [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]</code></pre>
+    <pre><code>range(0, 10)    # => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+range(5)        # => [0, 1, 2, 3, 4]
+range(1, 10, 2) # => [1, 3, 5, 7, 9]
+range(10, 0, -1) # => [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]</code></pre>
 */
 pub fn silk_builtin_range(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     let (start, stop, step) = match args.len() {
@@ -94,9 +94,9 @@ pub fn silk_builtin_range(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     - <code>Int</code>: The converted integer value.
 
     <b>Usage:</b>
-    <pre><code>Int("42") // => 42
-Int(3.14) // => 3
-Int(true) // => 1</code></pre>
+    <pre><code>Int("42") # => 42
+Int(3.14) # => 3
+Int(true) # => 1</code></pre>
 */
 pub fn silk_builtin_int(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
@@ -125,7 +125,7 @@ pub fn silk_builtin_int(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
 
 // @export Modules/Global#String
 /*
-    <h3>Signature</h3>
+    <b>Signature</b>
     <code>String(value: Any) -> String</code>
 
     <p>String Constructor. Converts a given value to its string representation. Supports integers, floats, booleans, strings, and null.</p>
@@ -137,9 +137,9 @@ pub fn silk_builtin_int(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
     - <code>String</code>: The converted string.
 
     <b>Usage:</b>
-    <pre><code>String(100)  // => "100"
-String(true) // => "true"
-String(null) // => "null"</code></pre>
+    <pre><code>String(100)  # => "100"
+String(true) # => "true"
+String(null) # => "null"</code></pre>
 */
 pub fn silk_builtin_string(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
@@ -168,7 +168,7 @@ pub fn silk_builtin_string(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
 
 // @export Modules/Global#Float
 /*
-    <h3>Signature</h3>
+    <b>Signature</b>
     <code>Float(value: Any) -> Float</code>
 
     <p>Float Constructor. Converts a value to a floating-point number. Accepts integers, floats, strings, booleans, and null.</p>
@@ -180,9 +180,9 @@ pub fn silk_builtin_string(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     - <code>Float</code>: The converted floating-point number.
 
     <b>Usage:</b>
-    <pre><code>Float("3.14") // => 3.14
-Float(10)     // => 10.0
-Float(true)   // => 1.0</code></pre>
+    <pre><code>Float("3.14") # => 3.14
+Float(10)     # => 10.0
+Float(true)   # => 1.0</code></pre>
 */
 pub fn silk_builtin_float(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
@@ -213,7 +213,7 @@ pub fn silk_builtin_float(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
 
 // @export Modules/Global#Bool
 /*
-    <h3>Signature</h3>
+    <b>Signature</b>
     <code>Bool(value: Any) -> Bool</code>
 
     <p>Bool Constructor. Converts a value to a boolean. Evaluates common truthy/falsy strings ("true", "false", "1", "0", "yes", "no"), numbers, null, and object truthiness.</p>
@@ -225,9 +225,9 @@ pub fn silk_builtin_float(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
     - <code>Bool</code>: The evaluated boolean result.
 
     <b>Usage:</b>
-    <pre><code>Bool("yes") // => true
-Bool(0)     // => false
-Bool(null)  // => false</code></pre>
+    <pre><code>Bool("yes") # => true
+Bool(0)     # => false
+Bool(null)  # => false</code></pre>
 */
 pub fn silk_builtin_bool(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
@@ -259,7 +259,7 @@ pub fn silk_builtin_bool(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
 
 // @export Modules/Global#List
 /*
-    <h3>Signature</h3>
+    <b>Signature</b>
     <code>List(*values: Any) -> List</code>
 
     <p>List Constructor. Creates a list from provided values. If a single list argument is passed, returns that list. If multiple values are provided, wraps them into a new list. If no arguments are passed, returns an empty list.</p>
@@ -271,9 +271,9 @@ pub fn silk_builtin_bool(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
     - <code>List</code>: The resulting list.
 
     <b>Usage:</b>
-    <pre><code>List()          // => []
-List(1, 2, 3)   // => [1, 2, 3]
-List([4, 5])    // => [4, 5]</code></pre>
+    <pre><code>List()          # => []
+List(1, 2, 3)   # => [1, 2, 3]
+List([4, 5])    # => [4, 5]</code></pre>
 */
 pub fn silk_builtin_list(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     let list = if args.is_empty() {

@@ -1,0 +1,126 @@
+<!-- Auto-generated -->
+<section>
+<h1>List</h1>
+<div class="table-of-contents">
+  <h2>Table of Contents</h2>
+  <ul>
+    <li><a href="#modules-list#len"><code>len</code></a></li>
+    <li><a href="#modules-list#contains"><code>contains</code></a></li>
+    <li><a href="#modules-list#index_of"><code>index_of</code></a></li>
+    <li><a href="#modules-list#slice"><code>slice</code></a></li>
+    <li><a href="#modules-list#push"><code>push</code></a></li>
+    <li><a href="#modules-list#pop"><code>pop</code></a></li>
+    <li><a href="#modules-list#first"><code>first</code></a></li>
+    <li><a href="#modules-list#last"><code>last</code></a></li>
+    <li><a href="#modules-list#reverse"><code>reverse</code></a></li>
+    <li><a href="#modules-list#count"><code>count</code></a></li>
+  </ul>
+</div>
+<hr>
+<div class="doc-section">
+  <p>The List module provides functions for querying, modifying, and manipulating list structures.</p>
+</div>
+<div id="len" class="doc-section">
+  <h2><code>len</code></h2>
+  <p><b>Signature</b><br>    <code>len(list: List) -> Int</code></p>
+<p><p>Returns the total number of elements contained in the specified list.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: The target list to inspect.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: The number of items in the list.</p>
+<b>Usage:</b>
+    <pre><code>var items = [1, 2, 3]
+var count = items.len() # 3</code></pre>
+</div>
+<div id="contains" class="doc-section">
+  <h2><code>contains</code></h2>
+  <p><b>Signature</b><br>    <code>contains(list: List, item: Any) -> Bool</code></p>
+<p><p>Checks whether a given item is present inside the specified list.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: The list to search through.<br>    - <code>item</code>: The element or value to search for.</p>
+<p><b>Returns:</b><br>    - <code>Bool</code>: <code>true</code> if the item is found, <code>false</code> otherwise.</p>
+<b>Usage:</b>
+    <pre><code>var fruits = ["apple", "banana"]
+if fruits.contains("apple") {
+    print("Found!")
+}</code></pre>
+</div>
+<div id="index_of" class="doc-section">
+  <h2><code>index_of</code></h2>
+  <p><b>Signature</b><br>    <code>index_of(list: List, item: Any) -> Int</code></p>
+<p><p>Finds the zero-based index of the first occurrence of a value in the list.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: The list to search.<br>    - <code>item</code>: The target element to locate.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Zero-based index of the item, or <code>-1</code> if not found.</p>
+<b>Usage:</b>
+    <pre><code>var letters = ["a", "b", "c"]
+var idx = letters.index_of("b") # 1</code></pre>
+</div>
+<div id="slice" class="doc-section">
+  <h2><code>slice</code></h2>
+  <p><b>Signature</b><br>    <code>slice(list: List, start: Int, end: Int) -> List</code></p>
+<p><p>Creates and returns a new list containing elements from index <code>start</code> up to, but excluding, index <code>end</code>.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Source list to slice.<br>    - <code>start</code>: Zero-based starting index.<br>    - <code>end</code>: Zero-based ending index (exclusive).</p>
+<p><b>Returns:</b><br>    - <code>List</code>: A sub-list created from the target range.</p>
+<b>Usage:</b>
+    <pre><code>var nums = [10, 20, 30, 40]
+var sub = nums.slice(1, 3) # [20, 30]</code></pre>
+</div>
+<div id="push" class="doc-section">
+  <h2><code>push</code></h2>
+  <p><b>Signature</b><br>    <code>push(list: List, item: Any) -> List</code></p>
+<p><p>Appends an item to the end of a list and returns an updated list pointer.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Target list to expand.<br>    - <code>item</code>: Value to append.</p>
+<p><b>Returns:</b><br>    - <code>List</code>: Pointer to the newly allocated list with the element added.</p>
+<b>Usage:</b>
+    <pre><code>var items = [1, 2]
+items = items.push(3)</code></pre>
+</div>
+<div id="pop" class="doc-section">
+  <h2><code>pop</code></h2>
+  <p><b>Signature</b><br>    <code>pop(list: List) -> List</code></p>
+<p><p>Removes the last element from a list and returns an updated list pointer.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Target list to shorten.</p>
+<p><b>Returns:</b><br>    - <code>List</code>: Pointer to the newly allocated list with the last element removed.</p>
+<b>Usage:</b>
+    <pre><code>var items = [1, 2, 3]
+items = items.pop()</code></pre>
+</div>
+<div id="first" class="doc-section">
+  <h2><code>first</code></h2>
+  <p><b>Signature</b><br>    <code>first(list: List) -> Any</code></p>
+<p><p>Retrieves the first element of a list.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Target list.</p>
+<p><b>Returns:</b><br>    - <code>Any</code>: The first value in the list, or <code>Null</code> if the list is empty.</p>
+<b>Usage:</b>
+    <pre><code>var nums = [10, 20, 30]
+var head = nums.first() # 10</code></pre>
+</div>
+<div id="last" class="doc-section">
+  <h2><code>last</code></h2>
+  <p><b>Signature</b><br>    <code>last(list: List) -> Any</code></p>
+<p><p>Retrieves the final element of a list.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Target list.</p>
+<p><b>Returns:</b><br>    - <code>Any</code>: The last value in the list, or <code>Null</code> if the list is empty.</p>
+<b>Usage:</b>
+    <pre><code>var nums = [10, 20, 30]
+var tail = nums.last() # 30</code></pre>
+</div>
+<div id="reverse" class="doc-section">
+  <h2><code>reverse</code></h2>
+  <p><b>Signature</b><br>    <code>reverse(list: List) -> List</code></p>
+<p><p>Reverses the order of elements in a list and returns a new list pointer containing the reversed elements.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Target list to reverse.</p>
+<p><b>Returns:</b><br>    - <code>List</code>: Pointer to a new list containing elements in reverse order.</p>
+<b>Usage:</b>
+    <pre><code>var nums = [1, 2, 3]
+var inverted = nums.reverse() # [3, 2, 1]</code></pre>
+</div>
+<div id="count" class="doc-section">
+  <h2><code>count</code></h2>
+  <p><b>Signature</b><br>    <code>count(list: List, item: Any) -> Int</code></p>
+<p><p>Counts the total occurrences of a specific item within the list.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Target list to examine.<br>    - <code>item</code>: Value to count within the list.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: The number of times the item appears.</p>
+<b>Usage:</b>
+    <pre><code>var values = [1, 2, 2, 3, 2]
+var c = values.count(2) # 3</code></pre>
+</div>
+
+</section>

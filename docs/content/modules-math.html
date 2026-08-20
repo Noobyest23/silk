@@ -1,0 +1,173 @@
+<!-- Auto-generated -->
+<section>
+<h1>Math</h1>
+<div class="table-of-contents">
+  <h2>Table of Contents</h2>
+  <ul>
+    <li><a href="#modules-math#Vector-magnitude"><code>Vector.magnitude</code></a></li>
+    <li><a href="#modules-math#Vector-dot"><code>Vector.dot</code></a></li>
+    <li><a href="#modules-math#Vec2"><code>Vec2</code></a></li>
+    <li><a href="#modules-math#Vec3"><code>Vec3</code></a></li>
+    <li><a href="#modules-math#Vec4"><code>Vec4</code></a></li>
+    <li><a href="#modules-math#abs"><code>abs</code></a></li>
+    <li><a href="#modules-math#sqrt"><code>sqrt</code></a></li>
+    <li><a href="#modules-math#pow"><code>pow</code></a></li>
+    <li><a href="#modules-math#floor"><code>floor</code></a></li>
+    <li><a href="#modules-math#ceil"><code>ceil</code></a></li>
+    <li><a href="#modules-math#round"><code>round</code></a></li>
+    <li><a href="#modules-math#min"><code>min</code></a></li>
+    <li><a href="#modules-math#max"><code>max</code></a></li>
+    <li><a href="#modules-math#sin"><code>sin</code></a></li>
+    <li><a href="#modules-math#cos"><code>cos</code></a></li>
+    <li><a href="#modules-math#tan"><code>tan</code></a></li>
+  </ul>
+</div>
+<hr>
+<div class="doc-section">
+  <p>The Math module provides basic mathematical constants, operations, geometric utilities, and 2D/3D/4D vector types.</p>
+</div>
+<div id="Vector-magnitude" class="doc-section">
+  <h2><code>Vector.magnitude</code></h2>
+  <p><b>Signature</b><br>    <code>Vector.magnitude() -> Float</code></p>
+<p><p>Calculates and returns the magnitude (length) of the vector object.</p></p>
+<p><b>Returns:</b><br>    - <code>Float</code>: The scalar length of the vector.</p>
+</div>
+<div id="Vector-dot" class="doc-section">
+  <h2><code>Vector.dot</code></h2>
+  <p><b>Signature</b><br>    <code>Vector.dot(other: Vector) -> Float</code></p>
+<p><p>Calculates the scalar dot product between the current vector and another matching dimension vector.</p></p>
+<p><b>Parameters:</b><br>    - <code>other</code>: Vector object of matching dimension.</p>
+<p><b>Returns:</b><br>    - <code>Float</code>: The scalar dot product.</p>
+</div>
+<div id="Vec2" class="doc-section">
+  <h2><code>Vec2</code></h2>
+  <p><b>Signature</b><br>    <code>Vec2(x: Number = 0, y: Number = 0) -> Vector2</code></p>
+<p><p>Constructs a 2D vector object containing x and y components alongside vector arithmetic methods.</p></p>
+<p><b>Parameters:</b><br>    - <code>x</code>: (Optional) X coordinate component.<br>    - <code>y</code>: (Optional) Y coordinate component.</p>
+<p><b>Returns:</b><br>    - <code>Vector2</code>: A 2D vector instance.</p>
+<b>Usage:</b>
+    <pre><code>var v = Vec2(3, 4)
+var len = v.magnitude() # 5.0</code></pre>
+</div>
+<div id="Vec3" class="doc-section">
+  <h2><code>Vec3</code></h2>
+  <p><b>Signature</b><br>    <code>Vec3(x: Number = 0, y: Number = 0, z: Number = 0) -> Vector3</code></p>
+<p><p>Constructs a 3D vector object containing x, y, and z components alongside vector arithmetic methods.</p></p>
+<p><b>Parameters:</b><br>    - <code>x</code>: (Optional) X coordinate component.<br>    - <code>y</code>: (Optional) Y coordinate component.<br>    - <code>z</code>: (Optional) Z coordinate component.</p>
+<p><b>Returns:</b><br>    - <code>Vector3</code>: A 3D vector instance.</p>
+<b>Usage:</b>
+    <pre><code>var v = Vec3(1, 2, 2)
+var len = v.magnitude() # 3.0</code></pre>
+</div>
+<div id="Vec4" class="doc-section">
+  <h2><code>Vec4</code></h2>
+  <p><b>Signature</b><br>    <code>Vec4(x: Number = 0, y: Number = 0, z: Number = 0, w: Number = 0) -> Vector4</code></p>
+<p><p>Constructs a 4D vector object containing x, y, z, and w components alongside vector arithmetic methods.</p></p>
+<p><b>Parameters:</b><br>    - <code>x</code>: (Optional) X coordinate component.<br>    - <code>y</code>: (Optional) Y coordinate component.<br>    - <code>z</code>: (Optional) Z coordinate component.<br>    - <code>w</code>: (Optional) W coordinate component.</p>
+<p><b>Returns:</b><br>    - <code>Vector4</code>: A 4D vector instance.</p>
+<b>Usage:</b>
+    <pre><code>var v1 = Vec4(1, 0, 0, 0)
+var v2 = Vec4(0, 1, 0, 0)
+var d = v1.dot(v2) # 0.0</code></pre>
+</div>
+<div id="abs" class="doc-section">
+  <h2><code>abs</code></h2>
+  <p><b>Signature</b><br>    <code>abs(num: Number) -> Number</code></p>
+<p><p>Returns the non-negative absolute value of a given number.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Numerical input value.</p>
+<p><b>Returns:</b><br>    - <code>Number</code>: Absolute value matching input type (Integer or Float).</p>
+<b>Usage:</b>
+    <pre><code>var a = abs(-5) # 5</code></pre>
+</div>
+<div id="sqrt" class="doc-section">
+  <h2><code>sqrt</code></h2>
+  <p><b>Signature</b><br>    <code>sqrt(num: Number) -> Float</code></p>
+<p><p>Computes the square root of a non-negative number.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Numerical input value.</p>
+<p><b>Returns:</b><br>    - <code>Float</code>: Calculated square root value.</p>
+<b>Usage:</b>
+    <pre><code>var root = sqrt(16) # 4.0</code></pre>
+</div>
+<div id="pow" class="doc-section">
+  <h2><code>pow</code></h2>
+  <p><b>Signature</b><br>    <code>pow(base: Number, exponent: Number) -> Float</code></p>
+<p><p>Raises a base number to the specified power exponent.</p></p>
+<p><b>Parameters:</b><br>    - <code>base</code>: Base number.<br>    - <code>exponent</code>: Power exponent number.</p>
+<p><b>Returns:</b><br>    - <code>Float</code>: Result of base raised to exponent.</p>
+<b>Usage:</b>
+    <pre><code>var res = pow(2, 3) # 8.0</code></pre>
+</div>
+<div id="floor" class="doc-section">
+  <h2><code>floor</code></h2>
+  <p><b>Signature</b><br>    <code>floor(num: Number) -> Int</code></p>
+<p><p>Rounds a floating-point number down to the nearest integer lower than or equal to the value.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Numerical input value.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Rounded integer.</p>
+<b>Usage:</b>
+    <pre><code>var val = floor(3.7) # 3</code></pre>
+</div>
+<div id="ceil" class="doc-section">
+  <h2><code>ceil</code></h2>
+  <p><b>Signature</b><br>    <code>ceil(num: Number) -> Int</code></p>
+<p><p>Rounds a floating-point number up to the nearest integer greater than or equal to the value.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Numerical input value.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Rounded integer.</p>
+<b>Usage:</b>
+    <pre><code>var val = ceil(3.2) # 4</code></pre>
+</div>
+<div id="round" class="doc-section">
+  <h2><code>round</code></h2>
+  <p><b>Signature</b><br>    <code>round(num: Number) -> Int</code></p>
+<p><p>Rounds a floating-point value to the nearest integer.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Numerical input value.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Nearest rounded integer.</p>
+<b>Usage:</b>
+    <pre><code>var val = round(3.5) # 4</code></pre>
+</div>
+<div id="min" class="doc-section">
+  <h2><code>min</code></h2>
+  <p><b>Signature</b><br>    <code>min(num1: Number, num2: Number) -> Number</code></p>
+<p><p>Compares two numbers and returns the smaller value.</p></p>
+<p><b>Parameters:</b><br>    - <code>num1</code>: First input value.<br>    - <code>num2</code>: Second input value.</p>
+<p><b>Returns:</b><br>    - <code>Number</code>: The smaller value among the two inputs.</p>
+<b>Usage:</b>
+    <pre><code>var lowest = min(10, 5) # 5</code></pre>
+</div>
+<div id="max" class="doc-section">
+  <h2><code>max</code></h2>
+  <p><b>Signature</b><br>    <code>max(num1: Number, num2: Number) -> Number</code></p>
+<p><p>Compares two numbers and returns the larger value.</p></p>
+<p><b>Parameters:</b><br>    - <code>num1</code>: First input value.<br>    - <code>num2</code>: Second input value.</p>
+<p><b>Returns:</b><br>    - <code>Number</code>: The larger value among the two inputs.</p>
+<b>Usage:</b>
+    <pre><code>var highest = max(10, 5) # 10</code></pre>
+</div>
+<div id="sin" class="doc-section">
+  <h2><code>sin</code></h2>
+  <p><b>Signature</b><br>    <code>sin(num: Number) -> Float</code></p>
+<p><p>Calculates the trigonometric sine of an angle given in radians.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Angle expressed in radians.</p>
+<p><b>Returns:</b><br>    - <code>Float</code>: Sine result.</p>
+<b>Usage:</b>
+    <pre><code>var val = sin(PI / 2) # 1.0</code></pre>
+</div>
+<div id="cos" class="doc-section">
+  <h2><code>cos</code></h2>
+  <p><b>Signature</b><br>    <code>cos(num: Number) -> Float</code></p>
+<p><p>Calculates the trigonometric cosine of an angle given in radians.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Angle expressed in radians.</p>
+<p><b>Returns:</b><br>    - <code>Float</code>: Cosine result.</p>
+<b>Usage:</b>
+    <pre><code>var val = cos(0) # 1.0</code></pre>
+</div>
+<div id="tan" class="doc-section">
+  <h2><code>tan</code></h2>
+  <p><b>Signature</b><br>    <code>tan(num: Number) -> Float</code></p>
+<p><p>Calculates the trigonometric tangent of an angle given in radians.</p></p>
+<p><b>Parameters:</b><br>    - <code>num</code>: Angle expressed in radians.</p>
+<p><b>Returns:</b><br>    - <code>Float</code>: Tangent result.</p>
+<b>Usage:</b>
+    <pre><code>var val = tan(0) # 0.0</code></pre>
+</div>
+
+</section>
