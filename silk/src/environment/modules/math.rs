@@ -11,8 +11,6 @@ fn get_double(val: &SilkValue) -> Option<f64> {
     }
 }
 
-// --- Vector Instance Helpers ---
-
 fn extract_vector_fields(vm: &mut VirtualMachine, self_val: &SilkValue, fields: &[&str]) -> Option<Vec<f32>> {
     let obj_val = match self_val {
         SilkValue::Pointer(ptr) => vm.heap.get(ptr)?,
@@ -38,7 +36,6 @@ pub fn silk_vec_magnitude(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
         return SilkValue::Null;
     }
 
-    // Try Vector4 -> Vector3 -> Vector2
     let fields = if let Some(components) = extract_vector_fields(vm, &args[0], &["x", "y", "z", "w"]) {
         components
     } else if let Some(components) = extract_vector_fields(vm, &args[0], &["x", "y", "z"]) {
@@ -75,8 +72,6 @@ pub fn silk_vec_dot(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     vm.error("dot() requires two vectors of matching dimension".to_string());
     SilkValue::Null
 }
-
-// --- Vector Constructors ---
 
 pub fn silk_vector2(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     let x = if args.len() > 0 { get_double(&args[0]).unwrap_or(0.0) as f32 } else { 0.0 };
@@ -128,8 +123,6 @@ pub fn silk_vector4(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue
     vm.heap_allocate(SilkValue::Object(vec_obj));
     SilkValue::Pointer(ptr)
 }
-
-// --- Standard Math Functions ---
 
 pub fn silk_math_abs(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() != 1 {
@@ -332,7 +325,6 @@ pub fn build_math_map() -> HashMap<String, SilkValue> {
     map.insert("PI".to_string(), SilkValue::Float(std::f64::consts::PI as f32));
     map.insert("E".to_string(), SilkValue::Float(std::f64::consts::E as f32));
     
-    // Vector Constructors
     map.insert("Vec2".to_string(), SilkValue::NativeFn(silk_vector2, String::from("Vec2(x: Number = 0, y: Number = 0) -> Vector2")));
     map.insert("Vec3".to_string(), SilkValue::NativeFn(silk_vector3, String::from("Vec3(x: Number = 0, y: Number = 0, z: Number = 0) -> Vector3")));
     map.insert("Vec4".to_string(), SilkValue::NativeFn(silk_vector4, String::from("Vec4(x: Number = 0, y: Number = 0, z: Number = 0, w: Number = 0) -> Vector4")));

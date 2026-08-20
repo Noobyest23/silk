@@ -216,7 +216,6 @@ pub fn silk_file_writeline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     SilkValue::Null
 }
 
-// Helper function to insert/overwrite lines at `pos` and advance the cursor
 fn write_lines_at_pos(
     vm: &mut VirtualMachine,
     file_ptr: usize,
@@ -229,7 +228,6 @@ fn write_lines_at_pos(
         _ => 0usize,
     };
 
-    // Load existing lines from disk if file exists
     let existing_content = std::fs::read_to_string(path).unwrap_or_default();
     let mut lines: Vec<String> = if existing_content.is_empty() {
         Vec::new()
@@ -237,12 +235,10 @@ fn write_lines_at_pos(
         existing_content.lines().map(String::from).collect()
     };
 
-    // Pad file with empty lines if `pos` exceeds current length
     while lines.len() < pos {
         lines.push(String::new());
     }
 
-    // Insert or replace lines starting at `pos`
     for (offset, line) in new_lines.iter().enumerate() {
         let idx = pos + offset;
         if idx < lines.len() {
@@ -252,12 +248,10 @@ fn write_lines_at_pos(
         }
     }
 
-    // Update `pos` cursor on the file object
     let new_pos = pos + new_lines.len();
     map.insert("pos".to_string(), SilkValue::Int(new_pos as i32));
     vm.heap.insert(file_ptr, SilkValue::Object(map));
 
-    // Save formatted content back to disk
     let mut final_content = lines.join("\n");
     if !final_content.is_empty() {
         final_content.push('\n');
@@ -286,13 +280,11 @@ pub fn silk_file_cursor(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
         }
     };
 
-    // Calculate maximum position (total lines) in file
     let max_pos = match std::fs::read_to_string(&path) {
         Ok(contents) => contents.lines().count() as i32,
         Err(_) => 0,
     };
 
-    // Clamp value between 0 and max_pos
     let clamped_pos = target_pos.clamp(0, max_pos);
 
     map.insert("pos".to_string(), SilkValue::Int(clamped_pos));
@@ -320,7 +312,6 @@ pub fn silk_file_getline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
         Ok(contents) => {
             let total_chars = contents.chars().count();
 
-            // If pos is at or past the end of the file, return ""
             if pos >= total_chars {
                 let handle = vm.heap_allocate(SilkValue::String(String::new()));
                 return match handle {
@@ -329,20 +320,16 @@ pub fn silk_file_getline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
                 };
             }
 
-            // Slice starting from character index `pos` without collecting into intermediate Strings
             let remaining_slice: String = contents.chars().skip(pos).collect();
             let line_content = remaining_slice.split('\n').next().unwrap_or("");
 
-            // Determine advancement offset
             let chars_read = line_content.chars().count();
             let has_newline = remaining_slice.chars().nth(chars_read) == Some('\n');
             let new_pos = pos + chars_read + if has_newline { 1 } else { 0 };
 
-            // Update file cursor state
             map.insert("pos".to_string(), SilkValue::Int(new_pos as i32));
             vm.heap.insert(file_ptr, SilkValue::Object(map));
 
-            // Strip trailing carriage returns for cross-platform compliance (\r\n)
             let trimmed = line_content.strip_suffix('\r').unwrap_or(line_content);
 
             let handle = vm.heap_allocate(SilkValue::String(trimmed.to_string()));
@@ -404,12 +391,10 @@ pub fn silk_file_construct(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
     let mut obj = HashMap::new();
     obj.insert("pos".to_owned(), SilkValue::Int(0));
 
-    // Attach path
     if let HeapAllocated(ptr) = vm.heap_allocate(SilkValue::String(path)) {
         obj.insert("path".to_owned(), SilkValue::Pointer(ptr));
     }
 
-    // Attach method closures
     let methods: [(&str, SilkValue); 5] = [
         ("getline", SilkValue::NativeFn(silk_file_getline, String::from("getline() -> String; Returns the next line"))),
         ("getlines", SilkValue::NativeFn(silk_file_getlines, String::from("getlines() -> List; Returns all lines"))),

@@ -3,8 +3,6 @@ use crate::environment::vm::VirtualMachine;
 use super::super::value::SilkValue;
 use image::{DynamicImage, GenericImageView, GenericImage, RgbImage, Rgba, imageops::FilterType};
 
-// --- Helper Functions ---
-
 fn extract_image<'a>(vm: &'a mut VirtualMachine, self_val: &'a SilkValue) -> Option<&'a DynamicImage> {
     let obj_val = match self_val {
         SilkValue::Pointer(ptr) => vm.heap.get(ptr)?,
@@ -37,7 +35,6 @@ fn construct_image_object(vm: &mut VirtualMachine, img: DynamicImage) -> SilkVal
     let mut obj = HashMap::new();
     obj.insert("data".to_string(), SilkValue::new_native(img));
     
-    // Method bindings
     obj.insert("width".to_string(), SilkValue::NativeFn(silk_image_width, "Image.width() -> Int".to_string()));
     obj.insert("height".to_string(), SilkValue::NativeFn(silk_image_height, "Image.height() -> Int".to_string()));
     obj.insert("resize".to_string(), SilkValue::NativeFn(silk_image_resize, "Image.resize(w: Int, h: Int) -> Image".to_string()));
@@ -55,8 +52,6 @@ fn construct_image_object(vm: &mut VirtualMachine, img: DynamicImage) -> SilkVal
     vm.heap_allocate(SilkValue::Object(obj));
     SilkValue::Pointer(ptr)
 }
-
-// --- Constructor ---
 
 pub fn silk_image(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.len() > 1 {
@@ -83,8 +78,6 @@ pub fn silk_image(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
 
     construct_image_object(vm, img)
 }
-
-// --- Instance Methods ---
 
 pub fn silk_image_width(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
@@ -317,8 +310,6 @@ pub fn silk_image_ascii(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
         SilkValue::Null
     }
 }
-
-// --- Module Exports ---
 
 pub fn build_image_map() -> HashMap<String, SilkValue> {
     let mut map = HashMap::new();

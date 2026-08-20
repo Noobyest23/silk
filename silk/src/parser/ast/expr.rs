@@ -114,7 +114,6 @@ impl fmt::Display for ExprNode {
             ExprNode::NullLiteral => write!(f, "null"),
 
             ExprNode::Op(lhs, rhs, op) => {
-                // This handles the recursion automatically
                 write!(f, "({} {} {})", lhs.node, op, rhs.node)
             }
             
@@ -123,7 +122,7 @@ impl fmt::Display for ExprNode {
             }
 
             ExprNode::FuncCall(func, args) => {
-                write!(f, "{}(", func.node)?; // Note the '?' for error propagation
+                write!(f, "{}(", func.node)?;
                 for (i, arg) in args.iter().enumerate() {
                     if i > 0 { write!(f, ", ")?; }
                     write!(f, "{}", arg.node)?;

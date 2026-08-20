@@ -1,0 +1,38 @@
+{
+  "Function": {
+    "prefix": "func",
+    "body": [
+      "func ${1:name}(${2:args}) {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "Create a Silk function"
+  },
+  "If Statement": {
+    "prefix": "if",
+    "body": [
+      "if (${1:condition}) {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "Insert an if statement"
+  },
+  "For Loop": {
+    "prefix": "for",
+    "body": [
+      "for (${1:item} in ${2:items}) {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "Insert a for loop"
+  },
+  "Struct": {
+    "prefix": "struct",
+    "body": [
+      "struct ${1:Name} {",
+      "\t${0}",
+      "}"
+    ],
+    "description": "Declare a Silk struct"
+  }
+}

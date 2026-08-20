@@ -23,12 +23,6 @@ enum Commands {
         /// Path to Silk source file
         file: PathBuf,
     },
-    /// Start interactive REPL (not implemented)
-    Repl,
-    /// Evaluate a single expression (not implemented)
-    Eval {
-        expr: String,
-    },
     // Inspect a standard library module
     Inspect {
         module_name: String,
@@ -70,12 +64,6 @@ fn main() {
     match cli.command {
         Commands::Run { file } => {
             execute_run(file);
-        }
-        Commands::Repl => {
-            println!("REPL is not implemented yet. Use `loom run <file>`.");
-        }
-        Commands::Eval { expr } => {
-            println!("Eval is not implemented yet. Expr: {}", expr);
         }
         Commands::Inspect { module_name } => {
             inspect_module(module_name);

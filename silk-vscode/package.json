@@ -1,0 +1,53 @@
+{
+  "name": "silk-language",
+  "displayName": "Silk",
+  "description": "Language support for the Silk programming language",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "silk",
+    "language",
+    "syntax"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://example.com/silk-language.git"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "silk",
+        "aliases": [
+          "Silk",
+          "silk"
+        ],
+        "extensions": [
+          ".silk"
+        ],
+        "configuration": "./language-configuration.json",
+        "mimetypes": [
+          "text/x-silk"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "silk",
+        "scopeName": "source.silk",
+        "path": "./syntaxes/silk.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "silk",
+        "path": "./snippets/silk.code-snippets.json"
+      }
+    ]
+  }
+}

@@ -18,11 +18,9 @@ type SilkType = usize;
 
 const SILK_EXIT_OK: i32 = 0;
 const SILK_EXIT_ERROR: i32 = 1;
-
-// Supporting enum for numeric coercion
     enum EitherNumbers {
-        Int(i32, i32),     // Adjust integer type (i32/i64) to match your SilkValue implementation
-        Float(f32, f32),   // Adjust float type (f32/f64) to match your SilkValue implementation
+        Int(i32, i32),
+        Float(f32, f32),
     }
 
 #[derive(Clone)]
@@ -736,7 +734,6 @@ impl VirtualMachine {
         let mut l_value = self.evaluate_expression(lhs)?;
         let mut r_value = self.evaluate_expression(rhs)?;
 
-        // Dereference pointer values from the heap if present
         if let SilkValue::Pointer(ptr) = l_value {
             l_value = self.heap.get(&ptr).ok_or("lhs was not found in the heap")?.clone();
         }
@@ -744,7 +741,6 @@ impl VirtualMachine {
             r_value = self.heap.get(&ptr).ok_or("rhs was not found in the heap")?.clone();
         }
 
-        // Helper closure to convert mixed Int/Float pairs into either Int or Float operands
         let coerce_numeric = |l: SilkValue, r: SilkValue| -> Option<EitherNumbers> {
             match (l, r) {
                 (SilkValue::Int(a), SilkValue::Int(b)) => Some(EitherNumbers::Int(a, b)),

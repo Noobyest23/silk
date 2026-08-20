@@ -195,10 +195,8 @@ impl<'a> Lexer<'a> {
                 
                 '"' => tokens.push(self.read_string()),
 
-                // Identifiers or Keywords
                 c if c.is_alphabetic() || c == '_' => tokens.push(self.read_identifier()),
 
-                // Numbers
                 c if c.is_numeric() => tokens.push(self.read_number()),
 
                 _ => { 
@@ -274,7 +272,7 @@ impl<'a> Lexer<'a> {
         let start_line = self.line;
         let start_column = self.column;
 
-        self.advance(); // Consume the opening '"'
+        self.advance();
         let mut string = String::new();
 
         while let Some(&c) = self.chars.peek() {
@@ -297,7 +295,7 @@ impl<'a> Lexer<'a> {
                     }
                 }
                 '"' => {
-                    self.advance(); // Consume closing '"'
+                    self.advance();
                     return Token {
                         t: TokenType::StringLit(string),
                         line: start_line,
