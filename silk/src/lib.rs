@@ -22,6 +22,33 @@ use vm::VirtualMachine;
 
 static GLOBAL_VM: OnceLock<Mutex<VirtualMachine>> = OnceLock::new();
 
+// @export #Silk
+/*
+    <p>Silk is a lightweight scripting runtime for building embeddable programs with a small standard library, dynamic execution, and module-based APIs.</p>
+
+    <b>Overview</b>
+    <p>The language includes built-in support for global values, math, string handling, list operations, time utilities, image processing, and file I/O. The runtime exposes a VM-backed API that lets host applications initialize the engine, run scripts, and inspect module state.</p>
+
+    <b>Quick Start</b>
+    <pre><code>import "io"
+
+print("Hello from Silk!")</code></pre>
+
+    <b>Core runtime entry points</b>
+    - <code>init()</code>: Creates the global VM and prepares the available modules.
+    - <code>run(path)</code>: Executes a Silk script file from disk.
+    - <code>run_source(source)</code>: Executes a string of Silk source directly.
+    - <code>inspect(module)</code>: Prints the values registered in a module.
+
+    <b>Built-in modules</b>
+    - <code>io</code>: File reading, writing, and console output
+    - <code>math</code>: Numeric and vector helpers
+    - <code>string</code>: String transformations and parsing utilities
+    - <code>list</code>: Sequence operations and element access
+    - <code>image</code>: Image loading, editing, and export helpers
+    - <code>time</code>: Timing utilities and sleep operations
+*/
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn init() -> bool {
     
