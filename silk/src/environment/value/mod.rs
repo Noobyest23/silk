@@ -5,7 +5,6 @@ use std::{fmt};
 use std::cmp::Ordering;
 use crate::environment::vm::{VirtualMachine};
 use crate::parser::ast::ProgramStatement;
-use std::rc::Rc;
 
 pub type NativeFn = fn (vm: &mut VirtualMachine, &Vec<SilkValue>) -> SilkValue;
 

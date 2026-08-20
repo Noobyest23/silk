@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Write};
+use std::{collections::HashMap, io::Write};
 use crate::environment::vm::{SilkHandle::{self, HeapAllocated}, VirtualMachine};
 use std::io;
 use super::super::value::SilkValue;

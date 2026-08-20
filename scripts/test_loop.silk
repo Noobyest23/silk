@@ -1,8 +1,8 @@
 import "io"
 
-var list = [0, 1, 2, 3, 4, 5]
+var loop_list = [0, 1, 2, 3, 4, 5]
 
-for num in list {
+for num in loop_list {
     print(num)
 }
 

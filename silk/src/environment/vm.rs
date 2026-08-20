@@ -265,9 +265,10 @@ impl VirtualMachine {
         Err("Conditional does not evaluate to boolean".to_string())
     }
 
-    pub fn execute(&mut self, program: Program, import_mode: bool) -> i32 {
+    pub fn execute(&mut self, program: Program, import_mode: bool, trace_stack_start: String) -> i32 {
         if !import_mode {
             self.scope = self.scope.child();
+            self.trace_stack.push((SilkValue::String(trace_stack_start), 0, 0));
         }
 
         for stmt in program.statements {
@@ -285,6 +286,7 @@ impl VirtualMachine {
             }
             self.scope = self.scope.pop();
             self.clear_garbage();
+            self.trace_stack.pop();
         }
 
         0
@@ -392,7 +394,7 @@ impl VirtualMachine {
                                 return Some(format!("Failed to parse module '{}' (line: {}, column: {})", module_name, statement.line, statement.column));
                             };
 
-                            let exit_code = self.execute(program, true);
+                            let exit_code = self.execute(program, true, String::new());
                             if exit_code != SILK_EXIT_OK {
                                 return Some(format!("Error occurred while importing silk file '{}' (line: {}, column: {})", module_name, statement.line, statement.column));
                             }
@@ -626,7 +628,7 @@ impl VirtualMachine {
                                 return Some(format!("Failed to parse module '{}'", module_name));
                             };
 
-                            self.execute(program, true);
+                            self.execute(program, true, String::new());
                             self.trace_stack.pop();
                             Option::None
                         }

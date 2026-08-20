@@ -4,3 +4,4 @@ pub mod math;
 pub mod string;
 pub mod image;
 pub mod builtin;
+pub mod time;

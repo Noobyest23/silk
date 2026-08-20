@@ -14,6 +14,7 @@ use crate::environment::modules::math::build_math_map;
 use crate::environment::modules::string::build_string_map;
 use crate::environment::modules::image::build_image_map;
 use crate::environment::modules::builtin::build_builtin_map;
+use crate::environment::modules::time::build_time_map;
 use crate::environment::value::SilkValue;
 use crate::parser::Parser;
 use std::sync::{Mutex, OnceLock};
@@ -47,6 +48,7 @@ pub unsafe extern "C" fn init() -> bool {
     vm.modules.insert(String::from("list"), build_list_map());
     vm.modules.insert(String::from("image"), build_image_map());
     vm.modules.insert(String::from("builtin"), build_builtin_map());
+    vm.modules.insert(String::from("time"), build_time_map());
 
 
     init_result
@@ -82,7 +84,7 @@ pub unsafe extern "C" fn run(path_ptr: *const c_char) {
             let o_program = parser.parse();
 
             if let Some(program) = o_program {
-                vm.execute(program, false);
+                vm.execute(program, false, String::from(path_str));
             }
             else {
                 eprintln!("[Silk Error] Could not execute script");
@@ -112,7 +114,7 @@ pub fn run_source(source: &str) {
     let o_program = parser.parse();
 
     if let Some(program) = o_program {
-        vm.execute(program, false);
+        vm.execute(program, false, String::from("raw source"));
     }
     else {
         eprintln!("[Silk Error] Could not execute script");

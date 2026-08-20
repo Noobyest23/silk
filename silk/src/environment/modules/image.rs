@@ -234,7 +234,7 @@ pub fn silk_image_grayscale(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> S
 
 pub fn silk_image_invert(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
     if args.is_empty() { return SilkValue::Null; }
-    let mut inverted = {
+    let inverted = {
         if let Some(img) = extract_image(vm, &args[0]) {
             let mut inv = img.clone();
             inv.invert();

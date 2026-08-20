@@ -1,0 +1,16 @@
+import "io"
+
+print(String("Hello world!"))
+print(String(1500))
+print(String(1.5910))
+print(String(true))
+
+print(Int("1"))
+print(Int(015))
+print(Int(1.0040))
+
+print(Float(405))
+print(Float("95105"))
+print(Float("51.105910"))
+print(Float(510985))
+print(Float(false))

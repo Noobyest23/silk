@@ -1,0 +1,208 @@
+import "io"
+
+print("Io print!")
+write("io_test_write.txt", "Test content line 1\n")
+print("reading from test file: ")
+print(read("io_test_write.txt"))
+append("io_test_write.txt", "Test content line 2\n")
+print("File after append:")
+print(read("io_test_write.txt"))
+print("File exists: ", exists("io_test_write.txt"))
+print("Nonexistent file exists: ", exists("nonexistent.txt"))
+
+print("Making file object")
+var file = File("io_test_write.txt")
+file.cursor(999)
+file.writeline("line 1")
+print("File after writeline")
+for line in file.getlines() {
+    print(line)
+}
+file.write("line 2")
+print("File after write")
+for line in file.getlines() {
+    print(line)
+}
+
+file.cursor(0)
+print(file.getline())
+delete("io_test_write.txt")
+print("File exists after delete: ", exists("io_test_write.txt"))
+
+var list = ["hello", "world"]
+print(list.len())
+print(list.contains("hello"))
+print(list.contains("foo"))
+print(list.index_of("world"))
+print(list.index_of("bar"))
+var sliced = list.slice(0, 1)
+print(sliced.len())
+var with_item = list.push("!")
+print(with_item.len())
+var nums = [1, 2, 3, 4, 5]
+print(nums.len())
+var popped = nums.pop()
+print(popped.len())
+print(nums.first())
+print(nums.last())
+var reversed = nums.reverse()
+print(reversed.len())
+var with_dupes = ["a", "b", "a", "c", "a"]
+print(with_dupes.count("a"))
+print(with_dupes.count("b"))
+print(with_dupes.count("z"))
+
+import "math"
+
+print(abs(-4.5))
+print(abs(3))
+print(sqrt(16))
+print(sqrt(2))
+print(pow(2, 3))
+print(pow(5, 2))
+print(PI)
+print(E)
+print(floor(3.7))
+print(floor(3.2))
+print(ceil(3.2))
+print(ceil(3.7))
+print(round(3.2))
+print(round(3.7))
+print(round(3.5))
+print(min(5, 3))
+print(min(-2, -8))
+print(max(5, 3))
+print(max(-2, -8))
+print(sin(0))
+print(cos(0))
+print(tan(0))
+
+print("Vector tests")
+var myvec2 = Vec2(0, 0)
+print(myvec2.x, myvec2.y)
+myvec2.x = 20
+myvec2.y = 40
+print(myvec2.x, myvec2.y)
+print("Vec2 Magnintude")
+print(myvec2.magnitude())
+
+print("".len())
+var msg = "Hello World!"
+print(msg.upper())
+print(msg.lower())
+print("hello".concat(" world"))
+print("        trimmed".trim())
+print("gwyudhellouihdn".substring(5, 11))
+print(msg.contains("World"))
+print("hello".replace("l", "L"))
+print("hello".reverse())
+print("hello".starts_with("he"))
+print("hello".starts_with("wo"))
+print("hello".ends_with("lo"))
+print("hello".ends_with("he"))
+print("hello".index_of("l"))
+print("hello".index_of("z"))
+print("ab".repeat(3))
+print("hello".char_at(1))
+print("hello".char_at(10))
+print("abracadabra".count("a"))
+print("hello".count("l"))
+
+global var global_x = "test_file"
+global var script_global_uno = "Hello Silk!"
+
+global func print_message(value) {
+    print(value)
+}
+
+print(global_x)
+print(script_global_uno)
+
+func print_message_local(value) {
+    print(value)
+}
+
+print_message_local(msg)
+print_message_local("import test")
+
+print(script_global_uno)
+print_message("global function")
+
+struct Foo {
+    var bar = 10
+    func Foo(n_bar) {
+        bar = n_bar
+    }
+
+    func add_ten() {
+        bar += 10
+    }
+}
+
+print(Foo())
+
+var my_foo = Foo(2)
+print(my_foo.bar)
+
+my_foo.add_ten()
+print(my_foo.bar)
+
+import "image"
+
+print("--- Testing Image Module ---")
+var img = Image("test_image.jpg")
+
+print("Image width: ", img.width())
+print("Image height: ", img.height())
+
+print("\n--- Testing Pixel Reading and Writing ---")
+var pixel = img.get_pixel(0, 0)
+print("Pixel at (0, 0) [R, G, B, A]: ", pixel)
+
+img.set_pixel(0, 0, 255, 0, 0, 255)
+var new_pixel = img.get_pixel(0, 0)
+print("Updated pixel at (0, 0): ", new_pixel)
+
+print("\n--- Testing Crop ---")
+var cropped = img.crop(0, 0, 50, 50)
+print("Cropped width: ", cropped.width())
+print("Cropped height: ", cropped.height())
+
+print("\n--- Testing Transformations ---")
+var gray_img = img.grayscale()
+var inverted_img = img.invert()
+var flipped_img = img.flip_h()
+
+print("\n--- Testing Save ---")
+var saved_gray = gray_img.save("output_grayscale.jpg")
+print("Grayscale image saved: ", saved_gray)
+
+var saved_flip = flipped_img.save("output_flipped.jpg")
+print("Flipped image saved: ", saved_flip)
+
+print("\n--- Testing ASCII Art Generation ---")
+var ascii_art = gray_img.ascii(" .:-=+*#%@", 60)
+print(ascii_art)
+
+var loop_list = [0, 1, 2, 3, 4, 5]
+
+for num in loop_list {
+    print(num)
+}
+
+var num = 10
+
+while num < 20 {
+    num += 1
+    print(num)
+}
+
+if num != 10 {
+    print("not eq")
+}
+
+for i in range(10) {
+    print(i)
+}
+
+print("Hello World!")

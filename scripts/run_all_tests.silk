@@ -9,3 +9,6 @@ import "scripts/session_test_1.silk"
 import "scripts/session_test_2.silk"
 
 import "scripts/test_struct.silk"
+import "scripts/test_all_image.silk"
+import "scripts/test_loop.silk"
+import "scripts/hello_world.silk"

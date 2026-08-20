@@ -1,0 +1,17 @@
+import "io"
+import "time"
+
+var start_time = time_ms()
+
+print("Time at start task", start_time)
+import "scripts/run_all_tests.silk"
+
+var end_time = time_ms()
+
+print("Time at end task", end_time)
+
+print("Total time elapsed", end_time - start_time)
+
+sleep(5)
+
+print("wakey wakey")
