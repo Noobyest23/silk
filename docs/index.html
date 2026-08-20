@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Silk Language Documentation</title>
+    <link rel="icon" href="images/script-icon.png" type="image/png">
+    <link rel="stylesheet" href="common/docs.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	<script src="docs-content.js"></script>
+</head>
+<body>
+    <div class="bg-image"></div>
+    <div class="layout">
+        <nav>
+            <div class="logo">
+                <img src="images/script-icon.png" alt="Nova Script Logo">
+            </div>
+            <h2>Navigation</h2>
+            
+            <!-- NAV_START -->
+<ul>
+  <li class="nav-dropdown">
+    <details>
+      <summary>Modules</summary>
+      <ul>
+        <li><a href="#modules-global" data-page="modules-global">Global</a></li>
+      </ul>
+    </details>
+  </li>
+</ul>
+<!-- NAV_END -->
+
+            <div class="sidebar-footer">
+                <hr>
+                <a href="https://discord.gg/s7Axx58VDv" target="_blank" class="report-btn">Report a Problem</a>
+                <button id="toggle-btn">Toggle Background</button>
+            </div>
+        </nav>
+        <main id="content">
+            <!-- Content loaded dynamically -->
+        </main>
+    </div>
+
+    <script>
+        const fallbackPage = document.querySelector('[data-page]')?.dataset.page || 'index';
+
+        function loadPage(page) {
+			const pageName = page || 'index';
+			const content = window.DOCS_CONTENT[pageName];
+
+			if (content) {
+				document.getElementById('content').innerHTML = content;
+			} else {
+				document.getElementById('content').innerHTML = '<section><h1>Page Not Found</h1></section>';
+			}
+
+			if (window.hljs) hljs.highlightAll();
+		}
+
+        function handleNav(e) {
+            const link = e.target.closest('a');
+            if (!link) return;
+
+            const page = link.getAttribute('data-page');
+            if (page) {
+                e.preventDefault();
+                window.location.hash = page;
+                loadPage(page);
+            }
+        }
+
+        document.querySelector('nav').addEventListener('click', handleNav);
+
+        function handleHashNavigation() {
+			// Get the full hash string without the leading '#'
+			const fullHash = window.location.hash.substring(1);
+			if (!fullHash) return;
+
+			// Split compound hashes like "modules-global#range"
+			const parts = fullHash.split('#');
+			const pageSlug = parts[0];
+			const sectionId = parts[1];
+
+			// Load the page if it's different from what's currently rendered
+			loadPage(pageSlug);
+
+			// If a specific section ID exists, scroll down to it
+			if (sectionId) {
+				setTimeout(() => {
+					const targetElement = document.getElementById(sectionId);
+					if (targetElement) {
+						targetElement.scrollIntoView({ behavior: 'smooth' });
+					}
+				}, 50); // Brief delay ensures DOM content is inserted before scrolling
+			}
+		}
+
+	// Listen for hash changes
+	window.addEventListener('hashchange', handleHashNavigation);
+
+	// Run on initial load
+	handleHashNavigation();
+
+        // Initial load
+        const initialPage = window.location.hash.replace('#', '') || fallbackPage;
+        loadPage(initialPage);
+
+        // Toggle Background
+        const toggleBtn = document.getElementById('toggle-btn');
+        const bgImage = document.querySelector('.bg-image');
+        toggleBtn.addEventListener('click', () => {
+            bgImage.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
