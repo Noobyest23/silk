@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Write};
+use std::{collections::HashMap, fs::{File, OpenOptions}, io::{BufRead, BufReader, Seek, SeekFrom, Write}, sync::{Arc, Mutex}};
 use crate::environment::vm::{SilkHandle::{self, HeapAllocated}, VirtualMachine};
 use std::io;
 use super::super::value::SilkValue;
@@ -154,6 +154,39 @@ pub fn silk_io_error(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValu
     SilkValue::Null
 }
 
+#[derive(Clone)]
+pub struct SilkFileHandle {
+    pub path: String,
+    pub file: Arc<Mutex<File>>,
+}
+
+fn extract_file_handle(vm: &mut VirtualMachine, arg: &SilkValue, fn_name: &str) -> Option<(usize, SilkFileHandle)> {
+    let file_ptr = match arg {
+        SilkValue::Pointer(p) => *p,
+        _ => {
+            vm.error(format!("{} expects a File object as the first argument", fn_name));
+            return None;
+        }
+    };
+
+    let Some(SilkValue::Object(map)) = vm.heap.get(&file_ptr).cloned() else {
+        vm.error(format!("{} expected a heap object", fn_name));
+        return None;
+    };
+
+    let Some(SilkValue::NativeData(arc_data)) = map.get("handle") else {
+        vm.error(format!("file object missing valid handle in {}", fn_name));
+        return None;
+    };
+
+    if let Some(file_handle) = arc_data.downcast_ref::<SilkFileHandle>() {
+        Some((file_ptr, file_handle.clone()))
+    } else {
+        vm.error(format!("failed to downcast file handle in {}", fn_name));
+        None
+    }
+}
+
 fn extract_file_info(vm: &mut VirtualMachine, arg: &SilkValue, fn_name: &str) -> Option<(usize, HashMap<String, SilkValue>, String)> {
     let file_ptr = match arg {
         SilkValue::Pointer(p) => *p,
@@ -186,15 +219,16 @@ pub fn silk_file_write(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkVa
         return SilkValue::Null;
     }
 
-    let Some((file_ptr, map, path)) = extract_file_info(vm, &args[0], "file.write") else {
+    let Some((_, handle)) = extract_file_handle(vm, &args[0], "file.write") else {
         return SilkValue::Null;
     };
 
     let content = vm.heap_get_string(args[1].clone()).unwrap_or_default();
-    let new_lines: Vec<String> = content.lines().map(String::from).collect();
 
-    if !new_lines.is_empty() {
-        write_lines_at_pos(vm, file_ptr, map, &path, new_lines);
+    if let Ok(mut file) = handle.file.lock() {
+        if let Err(e) = file.write_all(content.as_bytes()) {
+            vm.error(format!("file.write failed: {}", e));
+        }
     }
 
     SilkValue::Null
@@ -206,60 +240,20 @@ pub fn silk_file_writeline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
         return SilkValue::Null;
     }
 
-    let Some((file_ptr, map, path)) = extract_file_info(vm, &args[0], "file.writeline") else {
+    let Some((_, handle)) = extract_file_handle(vm, &args[0], "file.writeline") else {
         return SilkValue::Null;
     };
 
     let line = vm.heap_get_string(args[1].clone()).unwrap_or_default();
-    write_lines_at_pos(vm, file_ptr, map, &path, vec![line]);
 
-    SilkValue::Null
-}
-
-fn write_lines_at_pos(
-    vm: &mut VirtualMachine,
-    file_ptr: usize,
-    mut map: HashMap<String, SilkValue>,
-    path: &str,
-    new_lines: Vec<String>,
-) {
-    let pos = match map.get("pos") {
-        Some(SilkValue::Int(i)) => (*i).max(0) as usize,
-        _ => 0usize,
-    };
-
-    let existing_content = std::fs::read_to_string(path).unwrap_or_default();
-    let mut lines: Vec<String> = if existing_content.is_empty() {
-        Vec::new()
-    } else {
-        existing_content.lines().map(String::from).collect()
-    };
-
-    while lines.len() < pos {
-        lines.push(String::new());
-    }
-
-    for (offset, line) in new_lines.iter().enumerate() {
-        let idx = pos + offset;
-        if idx < lines.len() {
-            lines[idx] = line.clone();
-        } else {
-            lines.push(line.clone());
+    if let Ok(mut file) = handle.file.lock() {
+        let content = format!("{}\n", line);
+        if let Err(e) = file.write_all(content.as_bytes()) {
+            vm.error(format!("file.writeline failed: {}", e));
         }
     }
 
-    let new_pos = pos + new_lines.len();
-    map.insert("pos".to_string(), SilkValue::Int(new_pos as i32));
-    vm.heap.insert(file_ptr, SilkValue::Object(map));
-
-    let mut final_content = lines.join("\n");
-    if !final_content.is_empty() {
-        final_content.push('\n');
-    }
-
-    if let Err(e) = std::fs::write(path, final_content) {
-        vm.error(format!("Failed to write to file: {}", e));
-    }
+    SilkValue::Null
 }
 
 pub fn silk_file_cursor(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
@@ -268,29 +262,29 @@ pub fn silk_file_cursor(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkV
         return SilkValue::Null;
     }
 
-    let Some((file_ptr, mut map, path)) = extract_file_info(vm, &args[0], "file.cursor") else {
+    let Some((_, handle)) = extract_file_handle(vm, &args[0], "file.cursor") else {
         return SilkValue::Null;
     };
 
     let target_pos = match args[1] {
-        SilkValue::Int(i) => i,
+        SilkValue::Int(i) => i.max(0) as u64,
         _ => {
             vm.error(String::from("'file.cursor' expected an integer for position"));
             return SilkValue::Null;
         }
     };
 
-    let max_pos = match std::fs::read_to_string(&path) {
-        Ok(contents) => contents.lines().count() as i32,
-        Err(_) => 0,
-    };
+    if let Ok(mut file) = handle.file.lock() {
+        match file.seek(SeekFrom::Start(target_pos)) {
+            Ok(new_pos) => return SilkValue::Int(new_pos as i32),
+            Err(e) => {
+                vm.error(format!("file.cursor seek failed: {}", e));
+                return SilkValue::Null;
+            }
+        }
+    }
 
-    let clamped_pos = target_pos.clamp(0, max_pos);
-
-    map.insert("pos".to_string(), SilkValue::Int(clamped_pos));
-    vm.heap.insert(file_ptr, SilkValue::Object(map));
-
-    SilkValue::Int(clamped_pos)
+    SilkValue::Null
 }
 
 pub fn silk_file_getline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
@@ -299,50 +293,34 @@ pub fn silk_file_getline(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Silk
         return SilkValue::Null;
     }
 
-    let Some((file_ptr, mut map, path)) = extract_file_info(vm, &args[0], "file.getline") else {
+    let Some((_, handle)) = extract_file_handle(vm, &args[0], "file.getline") else {
         return SilkValue::Null;
     };
 
-    let pos = match map.get("pos") {
-        Some(SilkValue::Int(i)) => (*i).max(0) as usize,
-        _ => 0usize,
-    };
+    if let Ok(mut file) = handle.file.lock() {
+        let mut reader = BufReader::new(&*file);
+        let mut line = String::new();
 
-    match std::fs::read_to_string(&path) {
-        Ok(contents) => {
-            let total_chars = contents.chars().count();
+        match reader.read_line(&mut line) {
+            Ok(bytes_read) => {
+                // Seek underlying file descriptor to match current buffer offset
+                let _ = file.seek(SeekFrom::Current(bytes_read as i64));
 
-            if pos >= total_chars {
-                let handle = vm.heap_allocate(SilkValue::String(String::new()));
+                let trimmed = line.trim_end_matches(&['\r', '\n'][..]).to_string();
+                let handle = vm.heap_allocate(SilkValue::String(trimmed));
                 return match handle {
                     SilkHandle::HeapAllocated(ptr) => SilkValue::Pointer(ptr),
                     _ => unreachable!(),
                 };
             }
-
-            let remaining_slice: String = contents.chars().skip(pos).collect();
-            let line_content = remaining_slice.split('\n').next().unwrap_or("");
-
-            let chars_read = line_content.chars().count();
-            let has_newline = remaining_slice.chars().nth(chars_read) == Some('\n');
-            let new_pos = pos + chars_read + if has_newline { 1 } else { 0 };
-
-            map.insert("pos".to_string(), SilkValue::Int(new_pos as i32));
-            vm.heap.insert(file_ptr, SilkValue::Object(map));
-
-            let trimmed = line_content.strip_suffix('\r').unwrap_or(line_content);
-
-            let handle = vm.heap_allocate(SilkValue::String(trimmed.to_string()));
-            match handle {
-                SilkHandle::HeapAllocated(ptr) => SilkValue::Pointer(ptr),
-                _ => unreachable!(),
+            Err(e) => {
+                vm.error(format!("file.getline failed: {}", e));
+                return SilkValue::Null;
             }
         }
-        Err(e) => {
-            vm.error(format!("file.getline failed to read file: {}", e));
-            SilkValue::Null
-        }
     }
+
+    SilkValue::Null
 }
 
 pub fn silk_file_getlines(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
@@ -351,33 +329,44 @@ pub fn silk_file_getlines(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Sil
         return SilkValue::Null;
     }
 
-    let Some((_, _, path)) = extract_file_info(vm, &args[0], "file.getlines") else {
+    let Some((_, handle)) = extract_file_handle(vm, &args[0], "file.getlines") else {
         return SilkValue::Null;
     };
 
-    match std::fs::read_to_string(&path) {
-        Ok(contents) => {
-            let lines: Vec<&str> = contents.lines().collect();
-            let mut elems: Vec<SilkValue> = Vec::with_capacity(lines.len());
-            for l in lines {
-                let handle = vm.heap_allocate(SilkValue::String(l.to_string()));
-                match handle {
-                    SilkHandle::HeapAllocated(ptr) => elems.push(SilkValue::Pointer(ptr)),
-                    _ => unreachable!(),
+    if let Ok(mut file) = handle.file.lock() {
+        // Reset cursor to start to read all lines
+        if let Err(e) = file.seek(SeekFrom::Start(0)) {
+            vm.error(format!("file.getlines failed to seek: {}", e));
+            return SilkValue::Null;
+        }
+
+        let reader = BufReader::new(&*file);
+        let mut elems: Vec<SilkValue> = Vec::new();
+
+        for line in reader.lines() {
+            match line {
+                Ok(l) => {
+                    let handle = vm.heap_allocate(SilkValue::String(l));
+                    match handle {
+                        SilkHandle::HeapAllocated(ptr) => elems.push(SilkValue::Pointer(ptr)),
+                        _ => unreachable!(),
+                    }
+                }
+                Err(e) => {
+                    vm.error(format!("file.getlines error reading line: {}", e));
+                    return SilkValue::Null;
                 }
             }
+        }
 
-            let list_handle = vm.heap_allocate(SilkValue::List(elems));
-            match list_handle {
-                SilkHandle::HeapAllocated(ptr) => SilkValue::Pointer(ptr),
-                _ => unreachable!(),
-            }
-        }
-        Err(e) => {
-            vm.error(format!("file.getlines failed to read file: {}", e));
-            SilkValue::Null
-        }
+        let list_handle = vm.heap_allocate(SilkValue::List(elems));
+        return match list_handle {
+            SilkHandle::HeapAllocated(ptr) => SilkValue::Pointer(ptr),
+            _ => unreachable!(),
+        };
     }
+
+    SilkValue::Null
 }
 
 pub fn silk_file_construct(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> SilkValue {
@@ -388,8 +377,22 @@ pub fn silk_file_construct(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
 
     let path = vm.heap_get_string(args[0].clone()).unwrap_or_default();
 
+    // Open file with Read + Write access, create if it doesn't exist
+    let file = match OpenOptions::new().read(true).write(true).create(true).open(&path) {
+        Ok(f) => f,
+        Err(e) => {
+            vm.error(format!("Failed to open file '{}': {}", path, e));
+            return SilkValue::Null;
+        }
+    };
+
+    let handle_struct = SilkFileHandle {
+        path: path.clone(),
+        file: Arc::new(Mutex::new(file)),
+    };
+
     let mut obj = HashMap::new();
-    obj.insert("pos".to_owned(), SilkValue::Int(0));
+    obj.insert("handle".to_owned(), SilkValue::NativeData(Arc::new(handle_struct)));
 
     if let HeapAllocated(ptr) = vm.heap_allocate(SilkValue::String(path)) {
         obj.insert("path".to_owned(), SilkValue::Pointer(ptr));
@@ -400,7 +403,7 @@ pub fn silk_file_construct(vm: &mut VirtualMachine, args: &Vec<SilkValue>) -> Si
         ("getlines", SilkValue::NativeFn(silk_file_getlines, String::from("getlines() -> List; Returns all lines"))),
         ("write", SilkValue::NativeFn(silk_file_write, String::from("write(content: String); Writes content to file"))),
         ("writeline", SilkValue::NativeFn(silk_file_writeline, String::from("writeline(line: String); Appends line to file"))),
-        ("cursor", SilkValue::NativeFn(silk_file_cursor, String::from("cursor(pos: Int) -> Int; Sets line cursor position"))),
+        ("cursor", SilkValue::NativeFn(silk_file_cursor, String::from("cursor(pos: Int) -> Int; Sets byte cursor position"))),
     ];
 
     for (name, native_fn) in methods {
