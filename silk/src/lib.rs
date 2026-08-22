@@ -1,6 +1,7 @@
 mod lexer;
 mod parser;
-use std::ffi::{CStr, c_float, c_int};
+use std::collections::HashMap;
+use std::ffi::{CStr, CString, c_float, c_int};
 use std::fs::{read_to_string};
 use std::os::raw::c_char;
 use std::path::Path;
@@ -15,12 +16,221 @@ use crate::environment::modules::string::build_string_map;
 use crate::environment::modules::image::build_image_map;
 use crate::environment::modules::builtin::build_builtin_map;
 use crate::environment::modules::time::build_time_map;
-use crate::environment::value::SilkValue;
+use crate::environment::modules::random::build_random_map;
+use crate::environment::modules::json::build_json_map;
+pub use crate::environment::{value::{NativeFn, SilkValue}, vm::VirtualMachine};
 use crate::parser::Parser;
 use std::sync::{Mutex, OnceLock};
-use vm::VirtualMachine;
 
 static GLOBAL_VM: OnceLock<Mutex<VirtualMachine>> = OnceLock::new();
+static HOST_NATIVE_CALLBACK: OnceLock<Mutex<Option<unsafe extern "C" fn(*const c_char) -> *const c_char>>> = OnceLock::new();
+
+fn invoke_host_native_callback(input: &str) -> String {
+    let Some(callback_slot) = HOST_NATIVE_CALLBACK.get() else {
+        return String::new();
+    };
+
+    let callback = {
+        let lock = callback_slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        *lock
+    };
+
+    let Some(callback) = callback else {
+        return String::new();
+    };
+
+    let c_input = CString::new(input).unwrap_or_default();
+    let result_ptr = unsafe { callback(c_input.as_ptr()) };
+
+    if result_ptr.is_null() {
+        return String::new();
+    }
+
+    let result = unsafe { CStr::from_ptr(result_ptr) };
+    result.to_str().unwrap_or_default().to_string()
+}
+
+pub fn register_module(module_name: &str, values: HashMap<String, SilkValue>) -> bool {
+    let Some(vm_mutex) = GLOBAL_VM.get() else {
+        eprintln!("[Silk Error] VM was never initialized! Call silk_init() first.");
+        return false;
+    };
+
+    let mut vm = match vm_mutex.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+
+    vm.modules.insert(module_name.to_string(), values);
+    true
+}
+
+pub fn add_module_value(module_name: &str, key: &str, value: SilkValue) -> bool {
+    let Some(vm_mutex) = GLOBAL_VM.get() else {
+        eprintln!("[Silk Error] VM was never initialized! Call silk_init() first.");
+        return false;
+    };
+
+    let mut vm = match vm_mutex.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+
+    vm.modules.entry(module_name.to_string())
+        .or_insert_with(HashMap::new)
+        .insert(key.to_string(), value);
+    true
+}
+
+pub fn register_module_native_fn(module_name: &str, key: &str, func: NativeFn, description: &str) -> bool {
+    add_module_value(module_name, key, SilkValue::NativeFn(func, description.to_string()))
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn register_module_native_fn_host(
+    module_name: *const c_char,
+    key: *const c_char,
+    callback: unsafe extern "C" fn(*const c_char) -> *const c_char,
+    description: *const c_char,
+) -> bool {
+    if module_name.is_null() || key.is_null() || description.is_null() {
+        return false;
+    }
+
+    let c_name = unsafe { CStr::from_ptr(module_name) };
+    let c_key = unsafe { CStr::from_ptr(key) };
+    let c_description = unsafe { CStr::from_ptr(description) };
+
+    match (c_name.to_str(), c_key.to_str(), c_description.to_str()) {
+        (Ok(name), Ok(key_name), Ok(description_str)) => {
+            let callback_slot = HOST_NATIVE_CALLBACK.get_or_init(|| Mutex::new(None));
+            {
+                let mut lock = callback_slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+                *lock = Some(callback);
+            }
+
+            let wrapped: NativeFn = |_, args| {
+                let Some(SilkValue::String(value)) = args.first() else {
+                    return SilkValue::String(String::new());
+                };
+
+                SilkValue::String(invoke_host_native_callback(value.as_str()))
+            };
+
+            register_module_native_fn(name, key_name, wrapped, description_str)
+        }
+        _ => false,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn register_module_string(module_name: *const c_char, key: *const c_char, value: *const c_char) -> bool {
+    if module_name.is_null() || key.is_null() || value.is_null() {
+        return false;
+    }
+
+    let c_name = unsafe { CStr::from_ptr(module_name) };
+    let c_key = unsafe { CStr::from_ptr(key) };
+    let c_value = unsafe { CStr::from_ptr(value) };
+
+    match (c_name.to_str(), c_key.to_str(), c_value.to_str()) {
+        (Ok(name), Ok(key_str), Ok(val)) => {
+            add_module_value(name, key_str, SilkValue::String(val.to_string()))
+        }
+        _ => false,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn register_module_int(module_name: *const c_char, key: *const c_char, value: c_int) -> bool {
+    if module_name.is_null() || key.is_null() {
+        return false;
+    }
+
+    let c_name = unsafe { CStr::from_ptr(module_name) };
+    let c_key = unsafe { CStr::from_ptr(key) };
+
+    match (c_name.to_str(), c_key.to_str()) {
+        (Ok(name), Ok(key_str)) => add_module_value(name, key_str, SilkValue::Int(value as i32)),
+        _ => false,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn register_module_float(module_name: *const c_char, key: *const c_char, value: c_float) -> bool {
+    if module_name.is_null() || key.is_null() {
+        return false;
+    }
+
+    let c_name = unsafe { CStr::from_ptr(module_name) };
+    let c_key = unsafe { CStr::from_ptr(key) };
+
+    match (c_name.to_str(), c_key.to_str()) {
+        (Ok(name), Ok(key_str)) => add_module_value(name, key_str, SilkValue::Float(value as f32)),
+        _ => false,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn register_module_bool(module_name: *const c_char, key: *const c_char, value: c_int) -> bool {
+    if module_name.is_null() || key.is_null() {
+        return false;
+    }
+
+    let c_name = unsafe { CStr::from_ptr(module_name) };
+    let c_key = unsafe { CStr::from_ptr(key) };
+
+    match (c_name.to_str(), c_key.to_str()) {
+        (Ok(name), Ok(key_str)) => add_module_value(name, key_str, SilkValue::Bool(value != 0)),
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn register_module_stores_values_for_imports() {
+        unsafe {
+            let _ = init();
+        }
+
+        let mut module = HashMap::new();
+        module.insert("greet".to_string(), SilkValue::String("hello".to_string()));
+
+        assert!(register_module("external_test", module));
+
+        let Some(vm_mutex) = GLOBAL_VM.get() else {
+            panic!("VM was not initialized");
+        };
+
+        let vm = vm_mutex.lock().expect("VM mutex poisoned");
+        let entry = vm.modules.get("external_test").expect("module not registered");
+        assert!(matches!(entry.get("greet"), Some(SilkValue::String(value)) if value == "hello"));
+    }
+
+    #[test]
+    fn register_module_native_fn_registers_callable_value() {
+        fn native_stub(_vm: &mut crate::environment::vm::VirtualMachine, _args: &Vec<SilkValue>) -> SilkValue {
+            SilkValue::Int(7)
+        }
+
+        unsafe {
+            let _ = init();
+        }
+
+        assert!(register_module_native_fn("external_native", "answer", native_stub, "answers the question"));
+
+        let Some(vm_mutex) = GLOBAL_VM.get() else {
+            panic!("VM was not initialized");
+        };
+
+        let vm = vm_mutex.lock().expect("VM mutex poisoned");
+        let entry = vm.modules.get("external_native").expect("module not registered");
+        assert!(matches!(entry.get("answer"), Some(SilkValue::NativeFn(_, desc)) if desc == "answers the question"));
+    }
+}
 
 // @export #Silk
 /*
@@ -76,11 +286,10 @@ pub unsafe extern "C" fn init() -> bool {
     vm.modules.insert(String::from("image"), build_image_map());
     vm.modules.insert(String::from("builtin"), build_builtin_map());
     vm.modules.insert(String::from("time"), build_time_map());
-
-
+    vm.modules.insert(String::from("random"), build_random_map());
+    vm.modules.insert(String::from("json"), build_json_map());
     init_result
 }
-
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn run(path_ptr: *const c_char) {

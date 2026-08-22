@@ -5,3 +5,5 @@ pub mod string;
 pub mod image;
 pub mod builtin;
 pub mod time;
+pub mod random;
+pub mod json;

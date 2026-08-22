@@ -500,6 +500,25 @@ impl Parser {
                 self.advance();
                 Ok(ProgramExpression::new(ExprNode::ArrayLiteral(array), self.peek().line, self.peek().column))
             },
+            TokenType::OpenSquiggly => {
+                let mut map = Vec::new();
+
+                if !self.check(TokenType::CloseSquiggly) {
+                    loop {
+                        let key = self.parse_expression()?;
+                        self.expect(TokenType::Colon);
+                        let value = self.parse_expression()?;
+                        map.push((key, value));
+                        if self.check(TokenType::Comma) {
+                            self.advance();
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                self.advance();
+                Ok(ProgramExpression::new(ExprNode::MapLiteral(map), self.peek().line, self.peek().column))
+            }
             _ => {
                 Err(format!("Unexpected token in expression '{}'", tok))
             }

@@ -74,6 +74,7 @@ pub enum ExprNode {
     StringLiteral(String),
     ArrayLiteral(Vec<ProgramExpression>),
     StructLiteral(HashMap<String, ProgramExpression>),
+    MapLiteral(Vec<(ProgramExpression, ProgramExpression)>),
     NullLiteral,
     // expr is the function to be called, and the vector is the arguments
     FuncCall(ProgramExpression, Vec<ProgramExpression>),
@@ -108,6 +109,13 @@ impl fmt::Display for ExprNode {
                 write!(f, "{{")?;
                 for (key, value) in values {
                     write!(f, "{} : {}", key, value.node)?;
+                }
+                write!(f, "}}")
+            }
+            ExprNode::MapLiteral(values) => {
+                write!(f, "{{")?;
+                for (key, value) in values {
+                    write!(f, "{} : {}", key.node, value.node)?;
                 }
                 write!(f, "}}")
             }

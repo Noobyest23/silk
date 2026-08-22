@@ -1,9 +1,45 @@
 use std::ffi::CString;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 use clap::{Parser, Subcommand};
+use libloading::{Library, Symbol};
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 use silk::version;
+
+static HOST_NATIVE_CALLBACK: OnceLock<Mutex<Option<unsafe extern "C" fn(*const std::os::raw::c_char) -> *const std::os::raw::c_char>>> = OnceLock::new();
+
+fn host_native_callback_bridge(
+    _vm: &mut silk::VirtualMachine,
+    args: &Vec<silk::SilkValue>,
+) -> silk::SilkValue {
+    let Some(silk::SilkValue::String(value)) = args.first() else {
+        return silk::SilkValue::String(String::new());
+    };
+
+    let callback_slot = HOST_NATIVE_CALLBACK.get_or_init(|| Mutex::new(None));
+    let callback = {
+        let lock = callback_slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        *lock
+    };
+
+    let Some(callback) = callback else {
+        return silk::SilkValue::String(String::new());
+    };
+
+    let c_input = CString::new(value.as_str()).unwrap_or_default();
+    let result_ptr = unsafe { callback(c_input.as_ptr()) };
+
+    if result_ptr.is_null() {
+        return silk::SilkValue::String(String::new());
+    }
+
+    let result = unsafe { std::ffi::CStr::from_ptr(result_ptr) };
+    match result.to_str() {
+        Ok(value) => silk::SilkValue::String(value.to_string()),
+        Err(_) => silk::SilkValue::String(String::new()),
+    }
+}
 
 #[derive(Parser)]
 #[command(author, version, about = "Loom CLI for Silk", long_about = None)]
@@ -52,6 +88,81 @@ enum GlobalCommands {
     Call {
         expr: Vec<String>,
     },
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn silk_host_register_module_string(module_name: *const std::os::raw::c_char, key: *const std::os::raw::c_char, value: *const std::os::raw::c_char) -> bool {
+    if module_name.is_null() || key.is_null() || value.is_null() {
+        return false;
+    }
+
+    let name = unsafe { std::ffi::CStr::from_ptr(module_name) };
+    let key_name = unsafe { std::ffi::CStr::from_ptr(key) };
+    let value_name = unsafe { std::ffi::CStr::from_ptr(value) };
+
+    match (name.to_str(), key_name.to_str(), value_name.to_str()) {
+        (Ok(module), Ok(key), Ok(value)) => silk::add_module_value(module, key, silk::SilkValue::String(value.to_string())),
+        _ => false,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn silk_host_register_module_int(module_name: *const std::os::raw::c_char, key: *const std::os::raw::c_char, value: i32) -> bool {
+    if module_name.is_null() || key.is_null() {
+        return false;
+    }
+
+    let name = unsafe { std::ffi::CStr::from_ptr(module_name) };
+    let key_name = unsafe { std::ffi::CStr::from_ptr(key) };
+
+    match (name.to_str(), key_name.to_str()) {
+        (Ok(module), Ok(key)) => silk::add_module_value(module, key, silk::SilkValue::Int(value)),
+        _ => false,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn silk_host_register_module_bool(module_name: *const std::os::raw::c_char, key: *const std::os::raw::c_char, value: i32) -> bool {
+    if module_name.is_null() || key.is_null() {
+        return false;
+    }
+
+    let name = unsafe { std::ffi::CStr::from_ptr(module_name) };
+    let key_name = unsafe { std::ffi::CStr::from_ptr(key) };
+
+    match (name.to_str(), key_name.to_str()) {
+        (Ok(module), Ok(key)) => silk::add_module_value(module, key, silk::SilkValue::Bool(value != 0)),
+        _ => false,
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn silk_host_register_module_native_fn(
+    module_name: *const std::os::raw::c_char,
+    key: *const std::os::raw::c_char,
+    callback: unsafe extern "C" fn(*const std::os::raw::c_char) -> *const std::os::raw::c_char,
+    description: *const std::os::raw::c_char,
+) -> bool {
+    if module_name.is_null() || key.is_null() || description.is_null() {
+        return false;
+    }
+
+    let name = unsafe { std::ffi::CStr::from_ptr(module_name) };
+    let key_name = unsafe { std::ffi::CStr::from_ptr(key) };
+    let desc = unsafe { std::ffi::CStr::from_ptr(description) };
+
+    let (module, key_str, desc_str) = match (name.to_str(), key_name.to_str(), desc.to_str()) {
+        (Ok(module), Ok(key_str), Ok(desc_str)) => (module, key_str, desc_str),
+        _ => return false,
+    };
+
+    let callback_slot = HOST_NATIVE_CALLBACK.get_or_init(|| Mutex::new(None));
+    {
+        let mut lock = callback_slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        *lock = Some(callback);
+    }
+
+    silk::register_module_native_fn(module, key_str, host_native_callback_bridge, desc_str)
 }
 
 fn main() {
@@ -160,6 +271,16 @@ fn run_session() {
                             inspect_module(args[1].clone());
                         }
                     }
+                    "plugin" => {
+                        if args.len() < 2 {
+                            println!("Error: 'plugin' command requires a path to a shared library.");
+                        } else {
+                            match load_plugin(&args[1]) {
+                                Ok(_) => println!("Plugin loaded: {}", args[1]),
+                                Err(err) => println!("{}", err),
+                            }
+                        }
+                    }
                     "global" => {
                         if args.len() < 2 {
                             println!("Error: 'global' command requires an operation. Usage: global read <name>, global write <name> <value>, or global call <function>(...) ");
@@ -218,11 +339,57 @@ fn print_session_help() {
     println!("\nAvailable Session Commands:");
     println!("  run <file>                   Execute a Silk source file (supports spaces inside quotes)");
     println!("  inspect <module>             Inspect a standard library module");
+    println!("  plugin <path>               Load a shared library and call silk_load_module()");
     println!("  global read <name>                Read a global variable");
     println!("  global write <name> <value>       Set a global variable");
     println!("  global call <function>(...)       Call a globally registered function");
     println!("  help                              Show this help text");
     println!("  exit / quit                       Terminate the active session\n");
+}
+
+fn resolve_plugin_path(path: &str) -> Result<PathBuf, String> {
+    let raw = Path::new(path);
+
+    if raw.is_absolute() || raw.has_root() || raw.extension().is_some() {
+        let candidate = raw.to_path_buf();
+        if candidate.exists() {
+            return Ok(candidate);
+        }
+        return Err(format!("Plugin path not found: {}", path));
+    }
+
+    let candidates = [
+        raw.to_path_buf(),
+        PathBuf::from(format!("{}.so", path)),
+        PathBuf::from(format!("{}.dll", path)),
+        PathBuf::from(format!("{}.dylib", path)),
+    ];
+
+    for candidate in candidates {
+        if candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+
+    Err(format!("Plugin path not found: {}", path))
+}
+
+fn load_plugin(path: &str) -> Result<(), String> {
+    let resolved = resolve_plugin_path(path)?;
+    let library = unsafe {
+        Library::new(&resolved)
+            .map_err(|e| format!("Failed to load plugin '{}': {}", resolved.display(), e))?
+    };
+
+    unsafe {
+        let func: Symbol<unsafe extern "C" fn()> = library
+            .get(b"silk_load_module")
+            .map_err(|e| format!("Plugin '{}' does not export silk_load_module(): {}", resolved.display(), e))?;
+        func();
+    }
+
+    std::mem::forget(library);
+    Ok(())
 }
 
 /// Tokenizes input into arguments, keeping quoted substrings together.

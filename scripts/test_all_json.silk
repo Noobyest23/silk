@@ -1,0 +1,11 @@
+import "json"
+import "io"
+
+var data = parse("{\"name\": \"Silk\", \"version\": 1}")
+print(data)
+print(stringify(data))
+
+print(data["name"])
+print(data["version"])
+data["name"] = "NovaScript"
+print(data["name"])

@@ -1,0 +1,34 @@
+<!-- Auto-generated -->
+<section>
+<h1>Json</h1>
+<div class="table-of-contents">
+  <h2>Table of Contents</h2>
+  <ul>
+    <li><a href="#modules-json#parse"><code>parse</code></a></li>
+    <li><a href="#modules-json#stringify"><code>stringify</code></a></li>
+  </ul>
+</div>
+<hr>
+<div class="doc-section">
+  <p>The Json module provides functions for serializing Silk values into JSON strings<br>    and parsing JSON formatted strings into native Silk values.</p>
+</div>
+<div id="parse" class="doc-section">
+  <h2><code>parse</code></h2>
+  <p><b>Signature</b><br>    <code>parse(json_string: String) -> Any</code></p>
+<p><p>Parses a JSON string into corresponding Silk data structures (Maps, Lists, Strings, Numbers, Bools, Null).</p></p>
+<p><b>Parameters:</b><br>    - <code>json_string</code>: Target JSON string to decode.</p>
+<p><b>Returns:</b><br>    - <code>Any</code>: Decoded Silk value representation or <code>Null</code> on parse failure.</p>
+<b>Usage:</b>
+    <pre><code>var data = parse("{\"name\": \"Silk\", \"version\": 1}")</code></pre>
+</div>
+<div id="stringify" class="doc-section">
+  <h2><code>stringify</code></h2>
+  <p><b>Signature</b><br>    <code>stringify(val: Any) -> String</code></p>
+<p><p>Converts a Silk value or data structure into a valid JSON string.</p></p>
+<p><b>Parameters:</b><br>    - <code>val</code>: The value to serialize into JSON format.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: JSON encoded string representation.</p>
+<b>Usage:</b>
+    <pre><code>var json_str = stringify(data)</code></pre>
+</div>
+
+</section>

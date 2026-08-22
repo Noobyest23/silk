@@ -192,6 +192,10 @@ impl<'a> Lexer<'a> {
                         tokens.push(self.make_token(TokenType::LesserThan));
                     }
                 }
+                ':' => {
+                    self.advance();
+                    tokens.push(self.make_token(TokenType::Colon));
+                }
                 
                 '"' => tokens.push(self.read_string()),
 
@@ -277,20 +281,46 @@ impl<'a> Lexer<'a> {
 
         while let Some(&c) = self.chars.peek() {
             match c {
-                '\\' => { 
-                    self.advance(); 
-                    if let Some(escaped) = self.advance() {
-                        match escaped {
-                            'n' => string.push('\n'),
-                            't' => string.push('\t'),
-                            'r' => string.push('\r'),
-                            '\\' => string.push('\\'),
-                            '"' => string.push('"'),
-                            _ => {
-                                
-                                eprintln!("[Lexer Error] Invalid escape sequence '\\{}' at {}:{}", escaped, self.line, self.column);
-                                string.push(escaped); 
-                            }
+                '\\' => {
+                    self.advance();
+                    let Some(escaped) = self.chars.peek().copied() else {
+                        self.err("Unterminated escape sequence in string literal");
+                        return Token { t: TokenType::Eof, line: start_line, column: start_column };
+                    };
+
+                    match escaped {
+                        'n' => {
+                            self.advance();
+                            string.push('\n');
+                        }
+                        't' => {
+                            self.advance();
+                            string.push('\t');
+                        }
+                        'r' => {
+                            self.advance();
+                            string.push('\r');
+                        }
+                        '\\' => {
+                            self.advance();
+                            string.push('\\');
+                        }
+                        '"' => {
+                            self.advance();
+                            string.push('"');
+                        }
+                        'b' => {
+                            self.advance();
+                            string.push('\u{0008}');
+                        }
+                        'f' => {
+                            self.advance();
+                            string.push('\u{000C}');
+                        }
+                        _ => {
+                            eprintln!("[Lexer Error] Invalid escape sequence '\\{}' at {}:{}", escaped, self.line, self.column);
+                            self.advance();
+                            string.push(escaped);
                         }
                     }
                 }
@@ -307,7 +337,7 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
-        
+
         self.err("Unterminated string literal");
         Token { t: TokenType::Eof, line: start_line, column: start_column }
     }
@@ -331,6 +361,22 @@ impl<'a> Lexer<'a> {
             self.err(&msg);
             TokenType::Eof
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strings_support_escaped_quotes() {
+        let mut lexer = Lexer::new("parse(\"{\\\"name\\\": \\\"Silk\\\", \\\"version\\\": 1}\")");
+        let tokens = lexer.tokenize();
+
+        assert!(tokens.iter().any(|token| matches!(
+            token.t,
+            TokenType::StringLit(ref s) if s == "{\"name\": \"Silk\", \"version\": 1}"
+        )));
     }
 }
 

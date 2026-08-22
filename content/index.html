@@ -1,4 +1,16 @@
 <!-- Auto-generated -->
 <section>
-<h1>Welcome</h1><p>NovaScript Docs.</p>
+<h1>Home</h1>
+<div id="Silk" class="doc-section">
+  <h2><code>Silk</code></h2>
+  <p><p>Silk is a lightweight scripting runtime for building embeddable programs with a small standard library, dynamic execution, and module-based APIs.</p></p>
+<p><b>Overview</b><br>    <p>The language includes built-in support for global values, math, string handling, list operations, time utilities, image processing, and file I/O. The runtime exposes a VM-backed API that lets host applications initialize the engine, run scripts, and inspect module state.</p></p>
+<b>Quick Start</b>
+    <pre><code>import "io"
+
+print("Hello from Silk!")</code></pre>
+<p><b>Core runtime entry points</b><br>    - <code>init()</code>: Creates the global VM and prepares the available modules.<br>    - <code>run(path)</code>: Executes a Silk script file from disk.<br>    - <code>run_source(source)</code>: Executes a string of Silk source directly.<br>    - <code>inspect(module)</code>: Prints the values registered in a module.</p>
+<p><b>Built-in modules</b><br>    - <code>io</code>: File reading, writing, and console output<br>    - <code>math</code>: Numeric and vector helpers<br>    - <code>string</code>: String transformations and parsing utilities<br>    - <code>list</code>: Sequence operations and element access<br>    - <code>image</code>: Image loading, editing, and export helpers<br>    - <code>time</code>: Timing utilities and sleep operations</p>
+</div>
+
 </section>

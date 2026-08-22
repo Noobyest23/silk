@@ -1,0 +1,170 @@
+<!-- Auto-generated -->
+<section>
+<h1>String</h1>
+<div class="table-of-contents">
+  <h2>Table of Contents</h2>
+  <ul>
+    <li><a href="#modules-string#len"><code>len</code></a></li>
+    <li><a href="#modules-string#concat"><code>concat</code></a></li>
+    <li><a href="#modules-string#upper"><code>upper</code></a></li>
+    <li><a href="#modules-string#lower"><code>lower</code></a></li>
+    <li><a href="#modules-string#substring"><code>substring</code></a></li>
+    <li><a href="#modules-string#trim"><code>trim</code></a></li>
+    <li><a href="#modules-string#contains"><code>contains</code></a></li>
+    <li><a href="#modules-string#replace"><code>replace</code></a></li>
+    <li><a href="#modules-string#reverse"><code>reverse</code></a></li>
+    <li><a href="#modules-string#starts_with"><code>starts_with</code></a></li>
+    <li><a href="#modules-string#ends_with"><code>ends_with</code></a></li>
+    <li><a href="#modules-string#index_of"><code>index_of</code></a></li>
+    <li><a href="#modules-string#repeat"><code>repeat</code></a></li>
+    <li><a href="#modules-string#char_at"><code>char_at</code></a></li>
+    <li><a href="#modules-string#count"><code>count</code></a></li>
+  </ul>
+</div>
+<hr>
+<div class="doc-section">
+  <p>The String module provides functions for string manipulation, inspection, transformations, and substring searches.</p>
+</div>
+<div id="len" class="doc-section">
+  <h2><code>len</code></h2>
+  <p><b>Signature</b><br>    <code>len(s: String) -> Int</code></p>
+<p><p>Returns the total number of bytes/characters in a string.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Target string to inspect.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Total length of the string.</p>
+<b>Usage:</b>
+    <pre><code>var length = "Hello World".len() # 11</code></pre>
+</div>
+<div id="concat" class="doc-section">
+  <h2><code>concat</code></h2>
+  <p><b>Signature</b><br>    <code>concat(s1: String, s2: String) -> String</code></p>
+<p><p>Concatenates two strings together and returns the result.</p></p>
+<p><b>Parameters:</b><br>    - <code>s1</code>: First string segment.<br>    - <code>s2</code>: Second string segment.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Combined string value.</p>
+<b>Usage:</b>
+    <pre><code>var greeting = "Hello ".concat("World") # "Hello World"</code></pre>
+</div>
+<div id="upper" class="doc-section">
+  <h2><code>upper</code></h2>
+  <p><b>Signature</b><br>    <code>upper(s: String) -> String</code></p>
+<p><p>Converts all characters in a string to uppercase.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Input string to transform.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Uppercase string representation.</p>
+<b>Usage:</b>
+    <pre><code>var loud = "hello".upper() # "HELLO"</code></pre>
+</div>
+<div id="lower" class="doc-section">
+  <h2><code>lower</code></h2>
+  <p><b>Signature</b><br>    <code>lower(s: String) -> String</code></p>
+<p><p>Converts all characters in a string to lowercase.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Input string to transform.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Lowercase string representation.</p>
+<b>Usage:</b>
+    <pre><code>var quiet = "WORLD".lower() # "world"</code></pre>
+</div>
+<div id="substring" class="doc-section">
+  <h2><code>substring</code></h2>
+  <p><b>Signature</b><br>    <code>substring(s: String, start: Int, end: Int) -> String</code></p>
+<p><p>Extracts a range of characters from index <code>start</code> up to, but excluding, <code>end</code>.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Input string.<br>    - <code>start</code>: Zero-based starting character index.<br>    - <code>end</code>: Zero-based ending character index (exclusive).</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Extracted sub-string segment.</p>
+<b>Usage:</b>
+    <pre><code>var sub = "Hello World".substring(0, 5) # "Hello"</code></pre>
+</div>
+<div id="trim" class="doc-section">
+  <h2><code>trim</code></h2>
+  <p><b>Signature</b><br>    <code>trim(s: String) -> String</code></p>
+<p><p>Strips leading and trailing whitespace characters from a string.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Input string to trim.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Cleaned string without boundary whitespace.</p>
+<b>Usage:</b>
+    <pre><code>var clean = "   hello   ".trim() # "hello"</code></pre>
+</div>
+<div id="contains" class="doc-section">
+  <h2><code>contains</code></h2>
+  <p><b>Signature</b><br>    <code>contains(s: String, needle: String) -> Bool</code></p>
+<p><p>Checks whether a target string contains a specified substring sequence.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Base string to search within.<br>    - <code>needle</code>: Target substring to check for.</p>
+<p><b>Returns:</b><br>    - <code>Bool</code>: <code>true</code> if the needle substring is found, otherwise <code>false</code>.</p>
+<b>Usage:</b>
+    <pre><code>if "banana".contains("nan") {
+    # Match found
+}</code></pre>
+</div>
+<div id="replace" class="doc-section">
+  <h2><code>replace</code></h2>
+  <p><b>Signature</b><br>    <code>replace(s: String, old: String, new: String) -> String</code></p>
+<p><p>Replaces all occurrences of a target substring with a replacement string.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Input string.<br>    - <code>old</code>: Target substring pattern to find.<br>    - <code>new</code>: Replacement string content.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Transformed string value.</p>
+<b>Usage:</b>
+    <pre><code>var res = "foo bar".replace("bar", "baz") # "foo baz"</code></pre>
+</div>
+<div id="reverse" class="doc-section">
+  <h2><code>reverse</code></h2>
+  <p><b>Signature</b><br>    <code>reverse(s: String) -> String</code></p>
+<p><p>Reverses the character sequence of a given string.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Input string to reverse.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Reversed string value.</p>
+<b>Usage:</b>
+    <pre><code>var rev = "abc".reverse() # "cba"</code></pre>
+</div>
+<div id="starts_with" class="doc-section">
+  <h2><code>starts_with</code></h2>
+  <p><b>Signature</b><br>    <code>starts_with(s: String, prefix: String) -> Bool</code></p>
+<p><p>Verifies if a string begins with the specified prefix sequence.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Base string to inspect.<br>    - <code>prefix</code>: Prefix text sequence to test.</p>
+<p><b>Returns:</b><br>    - <code>Bool</code>: <code>true</code> if prefix matches, <code>false</code> otherwise.</p>
+<b>Usage:</b>
+    <pre><code>if "http://example.com".starts_with("http") {
+    # URL prefix matched
+}</code></pre>
+</div>
+<div id="ends_with" class="doc-section">
+  <h2><code>ends_with</code></h2>
+  <p><b>Signature</b><br>    <code>ends_with(s: String, suffix: String) -> Bool</code></p>
+<p><p>Verifies if a string terminates with the specified suffix sequence.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Base string to inspect.<br>    - <code>suffix</code>: Suffix text sequence to test.</p>
+<p><b>Returns:</b><br>    - <code>Bool</code>: <code>true</code> if suffix matches, <code>false</code> otherwise.</p>
+<b>Usage:</b>
+    <pre><code>if "image.png".ends_with(".png") {
+    # PNG extension matched
+}</code></pre>
+</div>
+<div id="index_of" class="doc-section">
+  <h2><code>index_of</code></h2>
+  <p><b>Signature</b><br>    <code>index_of(s: String, needle: String) -> Int</code></p>
+<p><p>Returns the byte index of the first occurrence of a substring.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Base string to search within.<br>    - <code>needle</code>: Target substring sequence.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Zero-based byte index of match start, or <code>-1</code> if not found.</p>
+<b>Usage:</b>
+    <pre><code>var idx = "hello world".index_of("world") # 6</code></pre>
+</div>
+<div id="repeat" class="doc-section">
+  <h2><code>repeat</code></h2>
+  <p><b>Signature</b><br>    <code>repeat(s: String, n: Int) -> String</code></p>
+<p><p>Creates a string by duplicating an input string <code>n</code> times.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Text payload to repeat.<br>    - <code>n</code>: Number of repetitions to generate.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Repeated string sequence.</p>
+<b>Usage:</b>
+    <pre><code>var echo = "ha".repeat(3) # "hahaha"</code></pre>
+</div>
+<div id="char_at" class="doc-section">
+  <h2><code>char_at</code></h2>
+  <p><b>Signature</b><br>    <code>char_at(s: String, index: Int) -> String</code></p>
+<p><p>Returns a single-character string residing at the specified zero-based character position.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Target string.<br>    - <code>index</code>: Zero-based character index.</p>
+<p><b>Returns:</b><br>    - <code>String</code>: Single-character string, or <code>Null</code> if the index exceeds string boundaries.</p>
+<b>Usage:</b>
+    <pre><code>var ch = "Silk".char_at(0) # "S"</code></pre>
+</div>
+<div id="count" class="doc-section">
+  <h2><code>count</code></h2>
+  <p><b>Signature</b><br>    <code>count(s: String, needle: String) -> Int</code></p>
+<p><p>Counts the non-overlapping occurrences of a substring inside a target string.</p></p>
+<p><b>Parameters:</b><br>    - <code>s</code>: Base string to search within.<br>    - <code>needle</code>: Target substring pattern.</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Total match count.</p>
+<b>Usage:</b>
+    <pre><code>var total = "banana".count("a") # 3</code></pre>
+</div>
+
+</section>

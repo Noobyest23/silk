@@ -35,6 +35,7 @@ pub enum TokenType {
     CloseBracket,
     Comma,
     Period,
+    Colon,
 
     Import,
     Var,
@@ -99,7 +100,7 @@ impl fmt::Display for TokenType {
             TokenType::CloseBracket  => write!(f, "]"),
             TokenType::Comma         => write!(f, ","),
             TokenType::Period        => write!(f, "."),
-
+            TokenType::Colon         => write!(f, ":"),
             
             TokenType::Import => write!(f, "import"),
             TokenType::Var    => write!(f, "var"),

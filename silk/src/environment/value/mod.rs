@@ -22,6 +22,7 @@ pub enum SilkValue {
     Pointer(usize),
     ObjectDefinition(Vec<ProgramStatement>),
     NativeData(Arc<dyn Any + Send + Sync>),
+    Map(HashMap<String, SilkValue>),
 }
 
 impl fmt::Display for SilkValue {
@@ -34,11 +35,11 @@ impl fmt::Display for SilkValue {
             SilkValue::String(str) => write!(f, "{}", str),
             SilkValue::Object(obj) => {
                 write!(f, "{{")?;
-                for (i, value) in obj.iter().enumerate() {
+                for (i, (key, value)) in obj.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{} : {}", value.0, value.1)?;
+                    write!(f, "{} : {}", key, value)?;
                 }
                 write!(f, "}}")
             }
@@ -73,6 +74,16 @@ impl fmt::Display for SilkValue {
                 write!(f, "\n}}")
             },
             SilkValue::NativeData(_) => write!(f, "<internal native data>"),
+            SilkValue::Map(map) => {
+                write!(f, "{{")?;
+                for (i, (key, value)) in map.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{} : {}", key, value)?;
+                }
+                write!(f, "}}")
+            },
         }
     }
 }
@@ -93,6 +104,7 @@ impl SilkValue {
             SilkValue::Pointer(ptr) => *ptr == 0 as usize,
             SilkValue::ObjectDefinition(_) => false,
             SilkValue::NativeData(_) => false,
+            SilkValue::Map(_) => true,
         }
     }
 

@@ -1,0 +1,7 @@
+import "io"
+import "example_dll"
+
+print(hello)
+print(answer)
+print(ready)
+print(native_greeting("Silk"))

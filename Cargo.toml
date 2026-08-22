@@ -2,4 +2,5 @@
 members = [
     "silk",
     "loom",
+    "examples/silk-dll-example",
 ]

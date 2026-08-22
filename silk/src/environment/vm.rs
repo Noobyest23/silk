@@ -30,6 +30,7 @@ pub enum SilkHandle {
     HeapElement(usize, usize),
     GlobalValue(String),
     ObjectField(Box<SilkHandle>, String),
+    MapEntry(Box<SilkHandle>, String),
 }
 
 pub struct VirtualMachine {
@@ -181,6 +182,18 @@ impl VirtualMachine {
         return Some(map);
     }
 
+    pub fn heap_get_map(&mut self, v: SilkValue) -> Option<HashMap<String, SilkValue>> {
+        let SilkValue::Pointer(pointer) = v else {
+            return None;
+        };
+
+        let Some(SilkValue::Map(map)) = self.get_value_from_pointer(pointer).ok() else {
+            return None;
+        };
+
+        return Some(map);
+    }
+
     fn get_value_from_pointer(&self, ptr: usize) -> Result<SilkValue, String> {
         self.heap.get(&ptr).cloned().ok_or_else(|| format!("Invalid heap pointer reference: {}", ptr))
     }
@@ -206,6 +219,17 @@ impl VirtualMachine {
                         _ => Err("Cannot access field on a non-object value".to_string()),
                     },
                     _ => Err("Cannot access field on a non-object value".to_string()),
+                }
+            }
+            SilkHandle::MapEntry(parent, key) => {
+                let parent_value = self.get_value_from_handle(parent)?;
+                match parent_value {
+                    SilkValue::Map(map) => map.get(key).cloned().ok_or_else(|| format!("Key '{}' not found in map", key)),
+                    SilkValue::Pointer(ptr) => match self.get_value_from_pointer(ptr) {
+                        Ok(SilkValue::Map(map)) => map.get(key).cloned().ok_or_else(|| format!("Key '{}' not found in map", key)),
+                        _ => Err("Cannot access entry on a non-map value".to_string()),
+                    },
+                    _ => Err("Cannot access entry on a non-map value".to_string()),
                 }
             }
         }
@@ -249,6 +273,25 @@ impl VirtualMachine {
                         return Ok(());
                     }
                     _ => return Err("Cannot assign to a field on a non-object value".to_string()),
+                };
+                self.set_value_in_handle(parent, new_parent_value)
+            }
+            SilkHandle::MapEntry(parent, key) => {
+                let parent_value = self.get_value_from_handle(parent)?;
+                let new_parent_value = match parent_value {
+                    SilkValue::Map(mut map) => {
+                        map.insert(key.clone(), value);
+                        SilkValue::Map(map)
+                    }
+                    SilkValue::Pointer(ptr) => {
+                        let Some(SilkValue::Map(mut map)) = self.heap.get(&ptr).cloned() else {
+                            return Err("Cannot assign to a key on a non-map value".to_string());
+                        };
+                        map.insert(key.clone(), value);
+                        self.heap.insert(ptr, SilkValue::Map(map));
+                        return Ok(());
+                    }
+                    _ => return Err("Cannot assign to a key on a non-map value".to_string()),
                 };
                 self.set_value_in_handle(parent, new_parent_value)
             }
@@ -694,6 +737,25 @@ impl VirtualMachine {
         }
     }
 
+    pub fn expr_map_lit(&mut self, str: &Vec<(ProgramExpression, ProgramExpression)>) -> Result<SilkValue, String> {
+        let mut v_map: HashMap<String, SilkValue> = HashMap::new();
+        for (key_expr, value_expr) in str {
+            let key_value = self.evaluate_expression(key_expr)?;
+            let value_value = self.evaluate_expression(value_expr)?;
+
+            let key_str = self.heap_get_string(key_value).ok_or("Map keys must be strings")?;
+            v_map.insert(key_str, value_value);
+        }
+
+        let handle = self.heap_allocate(SilkValue::Map(v_map));
+        if let SilkHandle::HeapAllocated(ptr) = handle {
+            return Ok(SilkValue::Pointer(ptr))
+        }
+        else {
+            unreachable!()
+        }
+    }
+
     pub fn expr_var(&mut self, id: &String) -> Result<SilkValue, String> {
         if let Some(handle) = self.scope.retrieve(id) {
             return self.get_value_from_handle(&handle);
@@ -709,14 +771,16 @@ impl VirtualMachine {
     pub fn expr_index_access(&mut self, container: &ProgramExpression, idx: &ProgramExpression) -> Result<SilkValue, String> {
         let v_container = self.evaluate_expression(container)?;
         let v_index = self.evaluate_expression(idx)?;
-        
-        let v_int = v_index.as_int().ok_or_else(|| "Array index must be an integer".to_string())?;
 
         match v_container {
             SilkValue::Pointer(ptr) => {
-                
-                match self.heap.get(&ptr) {
+                match self.heap.get(&ptr).cloned() {
+                    Some(SilkValue::Map(v_map)) => {
+                        let key_str = self.heap_get_string(v_index).ok_or("Map keys must be strings")?;
+                        v_map.get(&key_str).cloned().ok_or_else(|| format!("Key '{}' not found in map", key_str))
+                    }
                     Some(SilkValue::List(v_array)) => {
+                        let v_int = v_index.as_int().ok_or_else(|| "Array index must be an integer".to_string())?;
                         if (v_int as usize) < v_array.len() {
                             Ok(v_array[v_int as usize].clone())
                         } else {
@@ -1120,14 +1184,16 @@ impl VirtualMachine {
     pub fn expr_index_access_as_mut(&mut self, container: &ProgramExpression, idx: &ProgramExpression) -> Result<SilkHandle, String> {
         let v_container = self.evaluate_expression(container)?;
         let v_index = self.evaluate_expression(idx)?;
-        
-        let v_int = v_index.as_int().ok_or_else(|| "Array index must be an integer".to_string())?;
-        
+
         match v_container {
             SilkValue::Pointer(ptr) => {
-                
-                match self.heap.get(&ptr) {
+                match self.heap.get(&ptr).cloned() {
+                    Some(SilkValue::Map(_)) => {
+                        let key_str = self.heap_get_string(v_index).ok_or("Map keys must be strings")?;
+                        Ok(SilkHandle::MapEntry(Box::new(SilkHandle::HeapAllocated(ptr)), key_str))
+                    }
                     Some(SilkValue::List(v_array)) => {
+                        let v_int = v_index.as_int().ok_or_else(|| "Array index must be an integer".to_string())?;
                         if (v_int as usize) < v_array.len() {
                             Ok(SilkHandle::HeapElement(ptr, v_int as usize))
                         } else {
@@ -1194,5 +1260,44 @@ mod tests {
         };
 
         assert!(matches!(vm.get_value_from_pointer(ptr).unwrap(), SilkValue::Int(42)));
+    }
+
+    #[test]
+    fn map_values_use_string_keys() {
+        let mut vm = VirtualMachine::new();
+        let map_ptr = match vm.heap_allocate(SilkValue::Map(HashMap::from([
+            ("answer".to_string(), SilkValue::Int(42)),
+            ("active".to_string(), SilkValue::Bool(true)),
+        ]))) {
+            SilkHandle::HeapAllocated(ptr) => ptr,
+            _ => unreachable!(),
+        };
+
+        let map = vm.heap_get_map(SilkValue::Pointer(map_ptr)).unwrap();
+        assert!(matches!(map.get("answer"), Some(SilkValue::Int(42))));
+        assert!(matches!(map.get("active"), Some(SilkValue::Bool(true))));
+    }
+
+    #[test]
+    fn map_index_access_uses_string_keys() {
+        let mut vm = VirtualMachine::new();
+        let map_ptr = match vm.heap_allocate(SilkValue::Map(HashMap::from([
+            ("name".to_string(), SilkValue::String("Silk".to_string())),
+            ("version".to_string(), SilkValue::Int(1)),
+        ]))) {
+            SilkHandle::HeapAllocated(ptr) => ptr,
+            _ => unreachable!(),
+        };
+
+        let key = vm.expr_str_lit(&"name".to_string()).unwrap();
+        let value = vm.expr_index_access(&ProgramExpression::new(ExprNode::Var("data".to_string()), 0, 0), &ProgramExpression::new(ExprNode::StringLiteral("name".to_string()), 0, 0)).unwrap_err();
+        let _ = value;
+
+        let map_value = vm.get_value_from_pointer(map_ptr).unwrap();
+        let name_value = match map_value {
+            SilkValue::Map(ref entries) => entries.get("name").cloned().unwrap(),
+            _ => panic!("expected map"),
+        };
+        assert!(matches!(name_value, SilkValue::String(_)));
     }
 }

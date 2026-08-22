@@ -1,0 +1,43 @@
+<!-- Auto-generated -->
+<section>
+<h1>Random</h1>
+<div class="table-of-contents">
+  <h2>Table of Contents</h2>
+  <ul>
+    <li><a href="#modules-random#random"><code>random</code></a></li>
+    <li><a href="#modules-random#randint"><code>randint</code></a></li>
+    <li><a href="#modules-random#choice"><code>choice</code></a></li>
+  </ul>
+</div>
+<hr>
+<div class="doc-section">
+  <p>The Random module provides functions for pseudo-random number generation,<br>    shuffling collections, and making random choices.</p>
+</div>
+<div id="random" class="doc-section">
+  <h2><code>random</code></h2>
+  <p><b>Signature</b><br>    <code>random() -> Float</code></p>
+<p><p>Returns a pseudo-random floating point number in the range [0.0, 1.0).</p></p>
+<p><b>Returns:</b><br>    - <code>Float</code>: A random float between 0.0 and 1.0.</p>
+<b>Usage:</b>
+    <pre><code>var val = random()</code></pre>
+</div>
+<div id="randint" class="doc-section">
+  <h2><code>randint</code></h2>
+  <p><b>Signature</b><br>    <code>randint(min: Int, max: Int) -> Int</code></p>
+<p><p>Returns a random integer within the inclusive range [min, max].</p></p>
+<p><b>Parameters:</b><br>    - <code>min</code>: Lower bound (inclusive).<br>    - <code>max</code>: Upper bound (inclusive).</p>
+<p><b>Returns:</b><br>    - <code>Int</code>: Random integer in range.</p>
+<b>Usage:</b>
+    <pre><code>var dice = randint(1, 6)</code></pre>
+</div>
+<div id="choice" class="doc-section">
+  <h2><code>choice</code></h2>
+  <p><b>Signature</b><br>    <code>choice(list: List) -> Any</code></p>
+<p><p>Returns a random element selected from a non-empty list.</p></p>
+<p><b>Parameters:</b><br>    - <code>list</code>: Target list to pick from.</p>
+<p><b>Returns:</b><br>    - <code>Any</code>: Random item from the list.</p>
+<b>Usage:</b>
+    <pre><code>var picked = choice(["apple", "banana", "cherry"])</code></pre>
+</div>
+
+</section>
